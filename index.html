@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtiCentro Smart BOQ System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            overflow-x: auto;
+        }
+        
+        .nav-tab {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .nav-tab.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+        
+        .nav-tab.active:hover {
+            background: #2980b9;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .dashboard-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .dashboard-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .dashboard-card .amount {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .budget-chart {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .chart-label {
+            width: 150px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .chart-progress {
+            flex: 1;
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0 15px;
+        }
+        
+        .chart-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        .chart-amount {
+            width: 120px;
+            text-align: right;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .project-info {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-item label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .info-item input, .info-item select {
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .info-item input:focus, .info-item select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .smart-boq-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .smart-boq-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .smart-boq-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        
+        .smart-boq-table tr:hover {
+            background: #f7fafc;
+        }
+        
+        .material-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            background: white;
+            font-size: 0.85rem;
+        }
+        
+        .cost-class-select {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            background: white;
+            font-size: 0.8rem;
+        }
+        
+        .qty-input {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .amount-cell {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .add-item-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 15px 0;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .add-item-btn:hover {
+            background: #38a169;
+        }
+        
+        .remove-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .section-summary {
+            background: linear-gradient(135deg, #4a5568, #2d3748);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .summary-item {
+            text-align: center;
+        }
+        
+        .summary-item h4 {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+        
+        .summary-item .value {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        
+        .grand-summary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+        
+        .grand-summary h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2rem;
+        }
+        
+        .grand-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .grand-item {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .grand-item h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .grand-item .amount {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .pfs-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .pfs-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+        
+        .pfs-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .pfs-section h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .pfs-line {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+        }
+        
+        .pfs-subtotal {
+            padding: 12px 0;
+            font-weight: 700;
+            color: #2c3e50;
+            border-top: 2px solid #3498db;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .pfs-grand-total {
+            padding: 15px 0;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #e74c3c;
+            border-top: 3px solid #e74c3c;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .pfs-profit {
+            padding: 12px 0;
+            font-weight: 700;
+            color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+            margin-top: 10px;
+            padding-left: 15px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        @media (max-width: 768px) {
+            .smart-boq-table {
+                font-size: 0.75rem;
+            }
+            
+            .smart-boq-table th,
+            .smart-boq-table td {
+                padding: 6px 4px;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ ArtiCentro Smart BOQ System</h1>
+            <p>Intelligent Bill of Quantities with Pre-loaded Materials & Real-time Analytics</p>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+            <button class="nav-tab" onclick="showTab('structural')">🏗️ Structural Works</button>
+            <button class="nav-tab" onclick="showTab('kitchen')">🍳 Kitchen</button>
+            <button class="nav-tab" onclick="showTab('bathroom')">🚿 Toilet & Bath</button>
+            <button class="nav-tab" onclick="showTab('general')">🔧 General Works</button>
+            <button class="nav-tab" onclick="showTab('summary')">📋 Summary</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="project-info">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Project Name</label>
+                        <input type="text" id="projectName" placeholder="Enter project name" oninput="updateDashboard()">
+                    </div>
+                    <div class="info-item">
+                        <label>Client Name</label>
+                        <input type="text" id="clientName" placeholder="Enter client name">
+                    </div>
+                    <div class="info-item">
+                        <label>Project Budget (₱)</label>
+                        <input type="number" id="projectBudget" placeholder="0" oninput="updateDashboard()">
+                    </div>
+                    <div class="info-item">
+                        <label>Project Type</label>
+                        <select id="projectType">
+                            <option value="">Select project type</option>
+                            <option value="residential">Residential Construction</option>
+                            <option value="commercial">Commercial Fit-out</option>
+                            <option value="renovation">Renovation Project</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard">
+                <div class="dashboard-card">
+                    <h3>Total Project Cost</h3>
+                    <div class="amount" id="dashTotalCost">₱0.00</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Budget Remaining</h3>
+                    <div class="amount" id="dashBudgetRemaining">₱0.00</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Budget Utilization</h3>
+                    <div class="amount" id="dashBudgetUtil">0%</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Highest Cost Section</h3>
+                    <div class="amount" id="dashHighestSection">-</div>
+                </div>
+            </div>
+
+            <div class="budget-chart">
+                <h3 style="margin-bottom: 20px; color: #2c3e50;">💰 Budget Breakdown by Section</h3>
+                <div class="chart-bar">
+                    <div class="chart-label">Structural Works</div>
+                    <div class="chart-progress">
+                        <div class="chart-fill" id="structuralBar" style="width: 0%">0%</div>
+                    </div>
+                    <div class="chart-amount" id="structuralAmount">₱0.00</div>
+                </div>
+                <div class="chart-bar">
+                    <div class="chart-label">Kitchen</div>
+                    <div class="chart-progress">
+                        <div class="chart-fill" id="kitchenBar" style="width: 0%">0%</div>
+                    </div>
+                    <div class="chart-amount" id="kitchenAmount">₱0.00</div>
+                </div>
+                <div class="chart-bar">
+                    <div class="chart-label">Toilet & Bath</div>
+                    <div class="chart-progress">
+                        <div class="chart-fill" id="bathroomBar" style="width: 0%">0%</div>
+                    </div>
+                    <div class="chart-amount" id="bathroomAmount">₱0.00</div>
+                </div>
+                <div class="chart-bar">
+                    <div class="chart-label">General Works</div>
+                    <div class="chart-progress">
+                        <div class="chart-fill" id="generalBar" style="width: 0%">0%</div>
+                    </div>
+                    <div class="chart-amount" id="generalAmount">₱0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Structural Works Tab -->
+        <div id="structural" class="tab-content">
+            <h2 style="color: #2c3e50; margin-bottom: 20px;">🏗️ Structural Works</h2>
+            <table class="smart-boq-table" id="structuralTable">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Material/Service</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Class</th>
+                        <th>Unit Cost (₱)</th>
+                        <th>Overhead 20% (₱)</th>
+                        <th>VAT 1% (₱)</th>
+                        <th>Subtotal (₱)</th>
+                        <th>Markup 25% (₱)</th>
+                        <th>Grand Total (₱)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1.1</td>
+                        <td>
+                            <select class="material-select" onchange="updateCosts(this)">
+                                <option value="">Select Material/Service</option>
+                                <option value="columns" data-a="45000" data-b="42000" data-c="38000">COLUMNS - 4 Nos. 25x25cm Concrete columns</option>
+                                <option value="cement" data-a="280" data-b="260" data-c="240">Republic Portland Concrete Cement 40kg</option>
+                                <option value="sand" data-a="1200" data-b="1100" data-c="1000">Screened Sand (per cu.m)</option>
+                                <option value="gravel" data-a="1800" data-b="1650" data-c="1500">Gravel (per cu.m)</option>
+                                <option value="rebar16" data-a="850" data-b="800" data-c="750">16mm Reinforcement Bar (6M)</option>
+                                <option value="rebar10" data-a="420" data-b="390" data-c="360">10mm Reinforcement Bar (6M)</option>
+                                <option value="tiewire" data-a="180" data-b="165" data-c="150">Tie Wire #16 (per kg)</option>
+                                <option value="phenolic" data-a="2800" data-b="2600" data-c="2400">Phenolic Board 18mm</option>
+                                <option value="lumber" data-a="450" data-b="420" data-c="380">Good Lumber 10ft</option>
+                                <option value="beams" data-a="35000" data-b="32000" data-c="29000">Beams - Ground Level & Roof Beams</option>
+                                <option value="rebar12" data-a="650" data-b="600" data-c="550">12mm Reinforcement Bar (6M)</option>
+                                <option value="design" data-a="25000" data-b="22000" data-c="20000">Concept Design & Project Management</option>
+                                <option value="labor" data-a="15000" data-b="13500" data-c="12000">Labour Charge (per day)</option>
+                                <option value="outsource" data-a="18000" data-b="16500" data-c="15000">Outsource Labour (per day)</option>
+                                <option value="delivery" data-a="3500" data-b="3200" data-c="3000">Workshop to Site Delivery - L300</option>
+                                <option value="mobilization" data-a="8000" data-b="7500" data-c="7000">Mobilization Fund</option>
+                                <option value="materials_delivery" data-a="5000" data-b="4500" data-c="4000">Materials Delivery Cost</option>
+                                <option value="utilities" data-a="3000" data-b="2800" data-c="2500">Workshop Utilities & Contingencies</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="qty-input" value="1" oninput="calculateRowTotal(this)"></td>
+                        <td>lot</td>
+                        <td>
+                            <select class="cost-class-select" onchange="updateCosts(this)">
+                                <option value="a">Class A</option>
+                                <option value="b">Class B</option>
+                                <option value="c">Class C</option>
+                            </select>
+                        </td>
+                        <td class="amount-cell item-cost">₱0.00</td>
+                        <td class="amount-cell discrepancy-cost">₱0.00</td>
+                        <td class="amount-cell overhead-cost">₱0.00</td>
+                        <td class="amount-cell amount">₱0.00</td>
+                        <td class="amount-cell vat-cost">₱0.00</td>
+                        <td class="amount-cell total-amount">₱0.00</td>
+                        <td><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="add-item-btn" onclick="addStructuralRow()">+ Add Structural Item</button>
+            
+            <div class="section-summary">
+                <div class="summary-item">
+                    <h4>Base Cost</h4>
+                    <div class="value" id="structuralSubtotal">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total Overhead (20%)</h4>
+                    <div class="value" id="structuralDiscrepancy">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total VAT (1%)</h4>
+                    <div class="value" id="structuralOverhead">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total Markup (25%)</h4>
+                    <div class="value" id="structuralVAT">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Section Total</h4>
+                    <div class="value" id="structuralSectionTotal">₱0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kitchen Tab -->
+        <div id="kitchen" class="tab-content">
+            <h2 style="color: #2c3e50; margin-bottom: 20px;">🍳 Kitchen</h2>
+            <table class="smart-boq-table" id="kitchenTable">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Material/Service</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Class</th>
+                        <th>Unit Cost (₱)</th>
+                        <th>Overhead 20% (₱)</th>
+                        <th>VAT 1% (₱)</th>
+                        <th>Subtotal (₱)</th>
+                        <th>Markup 25% (₱)</th>
+                        <th>Grand Total (₱)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2.1</td>
+                        <td>
+                            <select class="material-select" onchange="updateCosts(this)">
+                                <option value="">Select Kitchen Item</option>
+                                <option value="cabinet_upper" data-a="25000" data-b="22000" data-c="18000">Upper Kitchen Cabinet (per linear meter)</option>
+                                <option value="cabinet_lower" data-a="35000" data-b="30000" data-c="25000">Lower Kitchen Cabinet (per linear meter)</option>
+                                <option value="countertop_granite" data-a="4500" data-b="4000" data-c="3500">Granite Countertop (per sq.m)</option>
+                                <option value="countertop_quartz" data-a="6500" data-b="6000" data-c="5500">Quartz Countertop (per sq.m)</option>
+                                <option value="sink_stainless" data-a="8500" data-b="7500" data-c="6500">Stainless Steel Kitchen Sink</option>
+                                <option value="faucet_kitchen" data-a="3500" data-b="3000" data-c="2500">Kitchen Faucet</option>
+                                <option value="tiles_backsplash" data-a="850" data-b="750" data-c="650">Backsplash Tiles (per sq.m)</option>
+                                <option value="range_hood" data-a="15000" data-b="12000" data-c="10000">Range Hood</option>
+                                <option value="gas_range" data-a="25000" data-b="20000" data-c="15000">Gas Range/Cooktop</option>
+                                <option value="kitchen_lighting" data-a="2500" data-b="2000" data-c="1500">Kitchen Lighting (per fixture)</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="qty-input" value="1" oninput="calculateRowTotal(this)"></td>
+                        <td>set</td>
+                        <td>
+                            <select class="cost-class-select" onchange="updateCosts(this)">
+                                <option value="a">Class A</option>
+                                <option value="b">Class B</option>
+                                <option value="c">Class C</option>
+                            </select>
+                        </td>
+                        <td class="amount-cell item-cost">₱0.00</td>
+                        <td class="amount-cell discrepancy-cost">₱0.00</td>
+                        <td class="amount-cell overhead-cost">₱0.00</td>
+                        <td class="amount-cell amount">₱0.00</td>
+                        <td class="amount-cell vat-cost">₱0.00</td>
+                        <td class="amount-cell total-amount">₱0.00</td>
+                        <td><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="add-item-btn" onclick="addKitchenRow()">+ Add Kitchen Item</button>
+            
+            <div class="section-summary">
+                <div class="summary-item">
+                    <h4>Base Cost</h4>
+                    <div class="value" id="kitchenSubtotal">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total Overhead (20%)</h4>
+                    <div class="value" id="kitchenDiscrepancy">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total VAT (1%)</h4>
+                    <div class="value" id="kitchenOverhead">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total Markup (25%)</h4>
+                    <div class="value" id="kitchenVAT">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Section Total</h4>
+                    <div class="value" id="kitchenSectionTotal">₱0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bathroom Tab -->
+        <div id="bathroom" class="tab-content">
+            <h2 style="color: #2c3e50; margin-bottom: 20px;">🚿 Toilet & Bath</h2>
+            <table class="smart-boq-table" id="bathroomTable">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Material/Service</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Class</th>
+                        <th>Unit Cost (₱)</th>
+                        <th>Overhead 20% (₱)</th>
+                        <th>VAT 1% (₱)</th>
+                        <th>Subtotal (₱)</th>
+                        <th>Markup 25% (₱)</th>
+                        <th>Grand Total (₱)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>3.1</td>
+                        <td>
+                            <select class="material-select" onchange="updateCosts(this)">
+                                <option value="">Select Bathroom Item</option>
+                                <option value="toilet_bowl" data-a="12000" data-b="10000" data-c="8000">Toilet Bowl & Tank</option>
+                                <option value="shower_set" data-a="8500" data-b="7000" data-c="5500">Shower Set with Mixer</option>
+                                <option value="lavatory" data-a="6500" data-b="5500" data-c="4500">Lavatory/Wash Basin</option>
+                                <option value="faucet_lavatory" data-a="2500" data-b="2000" data-c="1500">Lavatory Faucet</option>
+                                <option value="tiles_wall" data-a="650" data-b="550" data-c="450">Wall Tiles (per sq.m)</option>
+                                <option value="tiles_floor" data-a="750" data-b="650" data-c="550">Floor Tiles (per sq.m)</option>
+                                <option value="mirror" data-a="3500" data-b="3000" data-c="2500">Bathroom Mirror</option>
+                                <option value="exhaust_fan" data-a="2800" data-b="2300" data-c="1800">Exhaust Fan</option>
+                                <option value="accessories" data-a="1500" data-b="1200" data-c="1000">Bathroom Accessories Set</option>
+                                <option value="waterproofing" data-a="450" data-b="400" data-c="350">Waterproofing (per sq.m)</option>
+                                <option value="plumbing_rough" data-a="8000" data-b="7000" data-c="6000">Rough Plumbing Installation</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="qty-input" value="1" oninput="calculateRowTotal(this)"></td>
+                        <td>set</td>
+                        <td>
+                            <select class="cost-class-select" onchange="updateCosts(this)">
+                                <option value="a">Class A</option>
+                                <option value="b">Class B</option>
+                                <option value="c">Class C</option>
+                            </select>
+                        </td>
+                        <td class="amount-cell item-cost">₱0.00</td>
+                        <td class="amount-cell discrepancy-cost">₱0.00</td>
+                        <td class="amount-cell overhead-cost">₱0.00</td>
+                        <td class="amount-cell amount">₱0.00</td>
+                        <td class="amount-cell vat-cost">₱0.00</td>
+                        <td class="amount-cell total-amount">₱0.00</td>
+                        <td><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="add-item-btn" onclick="addBathroomRow()">+ Add Bathroom Item</button>
+            
+            <div class="section-summary">
+                <div class="summary-item">
+                    <h4>Base Cost</h4>
+                    <div class="value" id="bathroomSubtotal">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total Overhead (20%)</h4>
+                    <div class="value" id="bathroomDiscrepancy">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total VAT (1%)</h4>
+                    <div class="value" id="bathroomOverhead">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total Markup (25%)</h4>
+                    <div class="value" id="bathroomVAT">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Section Total</h4>
+                    <div class="value" id="bathroomSectionTotal">₱0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- General Works Tab -->
+        <div id="general" class="tab-content">
+            <h2 style="color: #2c3e50; margin-bottom: 20px;">🔧 General Works</h2>
+            <table class="smart-boq-table" id="generalTable">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Material/Service</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Class</th>
+                        <th>Unit Cost (₱)</th>
+                        <th>Overhead 20% (₱)</th>
+                        <th>VAT 1% (₱)</th>
+                        <th>Subtotal (₱)</th>
+                        <th>Markup 25% (₱)</th>
+                        <th>Grand Total (₱)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>4.1</td>
+                        <td>
+                            <select class="material-select" onchange="updateCosts(this)">
+                                <option value="">Select General Item</option>
+                                <option value="painting_interior" data-a="180" data-b="150" data-c="120">Interior Painting (per sq.m)</option>
+                                <option value="painting_exterior" data-a="220" data-b="180" data-c="150">Exterior Painting (per sq.m)</option>
+                                <option value="flooring_tiles" data-a="850" data-b="750" data-c="650">Floor Tiles Installation (per sq.m)</option>
+                                <option value="flooring_vinyl" data-a="450" data-b="400" data-c="350">Vinyl Flooring (per sq.m)</option>
+                                <option value="doors_interior" data-a="8500" data-b="7500" data-c="6500">Interior Door with Frame</option>
+                                <option value="windows_aluminum" data-a="4500" data-b="4000" data-c="3500">Aluminum Window (per sq.m)</option>
+                                <option value="electrical_wiring" data-a="350" data-b="300" data-c="250">Electrical Wiring (per meter)</option>
+                                <option value="switches_outlets" data-a="250" data-b="200" data-c="150">Switches & Outlets (per piece)</option>
+                                <option value="ceiling_gypsum" data-a="320" data-b="280" data-c="240">Gypsum Board Ceiling (per sq.m)</option>
+                                <option value="insulation" data-a="180" data-b="150" data-c="120">Insulation Material (per sq.m)</option>
+                            </select>
+                        </td>
+                        <td><input type="number" class="qty-input" value="1" oninput="calculateRowTotal(this)"></td>
+                        <td>set</td>
+                        <td>
+                            <select class="cost-class-select" onchange="updateCosts(this)">
+                                <option value="a">Class A</option>
+                                <option value="b">Class B</option>
+                                <option value="c">Class C</option>
+                            </select>
+                        </td>
+                        <td class="amount-cell item-cost">₱0.00</td>
+                        <td class="amount-cell discrepancy-cost">₱0.00</td>
+                        <td class="amount-cell overhead-cost">₱0.00</td>
+                        <td class="amount-cell amount">₱0.00</td>
+                        <td class="amount-cell vat-cost">₱0.00</td>
+                        <td class="amount-cell total-amount">₱0.00</td>
+                        <td><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="add-item-btn" onclick="addGeneralRow()">+ Add General Item</button>
+            
+            <div class="section-summary">
+                <div class="summary-item">
+                    <h4>Base Cost</h4>
+                    <div class="value" id="generalSubtotal">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total Overhead (20%)</h4>
+                    <div class="value" id="generalDiscrepancy">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total VAT (1%)</h4>
+                    <div class="value" id="generalOverhead">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Total Markup (25%)</h4>
+                    <div class="value" id="generalVAT">₱0.00</div>
+                </div>
+                <div class="summary-item">
+                    <h4>Section Total</h4>
+                    <div class="value" id="generalSectionTotal">₱0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Tab -->
+        <div id="summary" class="tab-content">
+            <div class="grand-summary">
+                <h2>📋 Project Summary</h2>
+                <div class="grand-grid">
+                    <div class="grand-item">
+                        <h3>Structural Works</h3>
+                        <div class="amount" id="summaryStructural">₱0.00</div>
+                    </div>
+                    <div class="grand-item">
+                        <h3>Kitchen</h3>
+                        <div class="amount" id="summaryKitchen">₱0.00</div>
+                    </div>
+                    <div class="grand-item">
+                        <h3>Toilet & Bath</h3>
+                        <div class="amount" id="summaryBathroom">₱0.00</div>
+                    </div>
+                    <div class="grand-item">
+                        <h3>General Works</h3>
+                        <div class="amount" id="summaryGeneral">₱0.00</div>
+                    </div>
+                    <div class="grand-item">
+                        <h3>Total Overhead</h3>
+                        <div class="amount" id="summaryTotalDiscrepancy">₱0.00</div>
+                    </div>
+                    <div class="grand-item">
+                        <h3>Total VAT</h3>
+                        <div class="amount" id="summaryTotalOverhead">₱0.00</div>
+                    </div>
+                    <div class="grand-item">
+                        <h3>Total Markup</h3>
+                        <div class="amount" id="summaryTotalVAT">₱0.00</div>
+                    </div>
+                    <div class="grand-item">
+                        <h3>SECTION TOTAL</h3>
+                        <div class="amount" id="summaryGrandTotal" style="font-size: 2.5rem; color: #ffd700;">₱0.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ArtiCentro Project Financial Summary -->
+            <div class="pfs-container">
+                <h2 style="text-align: center; color: #2c3e50; margin-bottom: 30px;">💼 ArtiCentro Project Financial Summary (PFS)</h2>
+                <div id="pfsDetails" class="pfs-details">
+                    <!-- PFS details will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let itemCounters = {
+            structural: 2,
+            kitchen: 2,
+            bathroom: 2,
+            general: 2
+        };
+
+        function formatCurrency(amount) {
+            return '₱' + amount.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            const navTabs = document.querySelectorAll('.nav-tab');
+            navTabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            if (tabName === 'dashboard' || tabName === 'summary') {
+                updateDashboard();
+            }
+        }
+
+        function updateCosts(element) {
+            const row = element.closest('tr');
+            const materialSelect = row.querySelector('.material-select');
+            const classSelect = row.querySelector('.cost-class-select');
+            const selectedOption = materialSelect.selectedOptions[0];
+            
+            if (selectedOption && selectedOption.value) {
+                const costClass = classSelect.value;
+                const cost = parseFloat(selectedOption.getAttribute(`data-${costClass}`)) || 0;
+                
+                calculateRowTotal(row);
+            }
+        }
+
+        function calculateRowTotal(element) {
+            const row = element.closest ? element.closest('tr') : element;
+            const materialSelect = row.querySelector('.material-select');
+            const classSelect = row.querySelector('.cost-class-select');
+            const qtyInput = row.querySelector('.qty-input');
+            
+            const selectedOption = materialSelect.selectedOptions[0];
+            
+            if (selectedOption && selectedOption.value) {
+                const costClass = classSelect.value;
+                const unitCost = parseFloat(selectedOption.getAttribute(`data-${costClass}`)) || 0;
+                const qty = parseFloat(qtyInput.value) || 0;
+                
+                // Step 1: Base calculation with 20% overhead
+                const itemCost = unitCost * qty;
+                const overheadCost = itemCost * 0.20; // 20% overhead
+                const subtotalWithOverhead = itemCost + overheadCost;
+                
+                // Step 2: Add VAT (1% as per ArtiCentro logic)
+                const vatCost = subtotalWithOverhead * 0.01; // 1% VAT
+                const totalWithVAT = subtotalWithOverhead + vatCost;
+                
+                // Step 3: Add 25% markup
+                const markupCost = totalWithVAT * 0.25; // 25% markup
+                const totalAmount = totalWithVAT + markupCost;
+                
+                row.querySelector('.item-cost').textContent = formatCurrency(itemCost);
+                row.querySelector('.discrepancy-cost').textContent = formatCurrency(overheadCost);
+                row.querySelector('.overhead-cost').textContent = formatCurrency(vatCost);
+                row.querySelector('.amount').textContent = formatCurrency(totalWithVAT);
+                row.querySelector('.vat-cost').textContent = formatCurrency(markupCost);
+                row.querySelector('.total-amount').textContent = formatCurrency(totalAmount);
+            }
+            
+            calculateSectionTotals();
+            updateDashboard();
+        }
+
+        function calculateSectionTotals() {
+            const sections = ['structural', 'kitchen', 'bathroom', 'general'];
+            
+            sections.forEach(section => {
+                const table = document.getElementById(section + 'Table');
+                const rows = table.querySelectorAll('tbody tr');
+                
+                let subtotal = 0;
+                let totalDiscrepancy = 0;
+                let totalOverhead = 0;
+                let totalVAT = 0;
+                let sectionTotal = 0;
+                
+                rows.forEach(row => {
+                    const itemCost = parseFloat(row.querySelector('.item-cost').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                    const discrepancy = parseFloat(row.querySelector('.discrepancy-cost').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                    const overhead = parseFloat(row.querySelector('.overhead-cost').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                    const vat = parseFloat(row.querySelector('.vat-cost').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                    const total = parseFloat(row.querySelector('.total-amount').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                    
+                    subtotal += itemCost;
+                    totalDiscrepancy += discrepancy;
+                    totalOverhead += overhead;
+                    totalVAT += vat;
+                    sectionTotal += total;
+                });
+                
+                document.getElementById(section + 'Subtotal').textContent = formatCurrency(subtotal);
+                document.getElementById(section + 'Discrepancy').textContent = formatCurrency(totalDiscrepancy);
+                document.getElementById(section + 'Overhead').textContent = formatCurrency(totalOverhead);
+                document.getElementById(section + 'VAT').textContent = formatCurrency(totalVAT);
+                document.getElementById(section + 'SectionTotal').textContent = formatCurrency(sectionTotal);
+            });
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const sections = ['structural', 'kitchen', 'bathroom', 'general'];
+            let totalProjectCost = 0;
+            let totalOverhead = 0;
+            let totalVAT = 0;
+            let totalMarkup = 0;
+            let grandTotal = 0;
+            
+            sections.forEach(section => {
+                const sectionTotal = parseFloat(document.getElementById(section + 'SectionTotal').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                const overhead = parseFloat(document.getElementById(section + 'Overhead').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                const vat = parseFloat(document.getElementById(section + 'VAT').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                const markup = parseFloat(document.getElementById(section + 'VAT').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                
+                // Calculate base cost (reverse engineering from grand total)
+                const baseCost = sectionTotal / 1.5125; // Reverse of 1.2 * 1.01 * 1.25
+                totalProjectCost += baseCost;
+                totalOverhead += overhead;
+                totalVAT += vat;
+                totalMarkup += markup;
+                grandTotal += sectionTotal;
+                
+                // Update summary tab
+                document.getElementById('summary' + section.charAt(0).toUpperCase() + section.slice(1)).textContent = formatCurrency(sectionTotal);
+            });
+            
+            // Calculate ArtiCentro Financial Summary
+            const projectMargin = totalProjectCost * 0.25; // 25% margin
+            const pfsSubtotal = totalProjectCost + projectMargin;
+            
+            // Additional Charges (AC)
+            const designFee = totalProjectCost * 0.055; // 5.5% Design/Approvals & Lead/Agent Fee
+            const shopDrawings = totalProjectCost * 0.025; // 2.5% Shop/Production/Technical Drawings
+            const agentFee = totalProjectCost * 0.03; // 3% Agent Fee
+            const adminFee = totalProjectCost * 0.045; // 4.5% Administrative Fee
+            const acSubtotal = designFee + shopDrawings + agentFee + adminFee;
+            
+            const finalSubtotal = pfsSubtotal + acSubtotal;
+            const discount = finalSubtotal * 0.0075; // Approximate 0.75% discount
+            const finalGrandTotal = finalSubtotal - discount;
+            const totalProjectProfit = finalGrandTotal - totalProjectCost;
+            
+            document.getElementById('summaryTotalDiscrepancy').textContent = formatCurrency(totalOverhead);
+            document.getElementById('summaryTotalOverhead').textContent = formatCurrency(totalVAT);
+            document.getElementById('summaryTotalVAT').textContent = formatCurrency(totalMarkup);
+            document.getElementById('summaryGrandTotal').textContent = formatCurrency(grandTotal);
+            
+            // Update PFS display if elements exist
+            updatePFSDisplay(totalProjectCost, projectMargin, pfsSubtotal, acSubtotal, finalSubtotal, discount, finalGrandTotal, totalProjectProfit);
+        }
+        
+        function updatePFSDisplay(tpc, margin, pfsSubtotal, acSubtotal, finalSubtotal, discount, finalGrandTotal, profit) {
+            const pfsElement = document.getElementById('pfsDetails');
+            if (pfsElement) {
+                pfsElement.innerHTML = `
+                    <div class="pfs-section">
+                        <h4>PROJECT FINANCIAL SUMMARY (PFS)</h4>
+                        <div class="pfs-line">1. Total Project Cost: ${formatCurrency(tpc)}</div>
+                        <div class="pfs-line">2. Total Project Margin (25%): ${formatCurrency(margin)}</div>
+                        <div class="pfs-subtotal">PFS Sub-total: ${formatCurrency(pfsSubtotal)}</div>
+                    </div>
+                    <div class="pfs-section">
+                        <h4>ADDITIONAL CHARGES (AC)</h4>
+                        <div class="pfs-line">3. Design/Approvals & Lead/Agent Fee (5.5%): ${formatCurrency(tpc * 0.055)}</div>
+                        <div class="pfs-line">   Shop/Production/Technical Drawings (2.5%): ${formatCurrency(tpc * 0.025)}</div>
+                        <div class="pfs-line">   Agent Fee (3%): ${formatCurrency(tpc * 0.03)}</div>
+                        <div class="pfs-line">4. Administrative Fee (4.5%): ${formatCurrency(tpc * 0.045)}</div>
+                        <div class="pfs-subtotal">AC Sub-total: ${formatCurrency(acSubtotal)}</div>
+                    </div>
+                    <div class="pfs-section">
+                        <div class="pfs-line">(PFS+AC) SUB-TOTAL: ${formatCurrency(finalSubtotal)}</div>
+                        <div class="pfs-line">DISCOUNT: ${formatCurrency(discount)}</div>
+                        <div class="pfs-grand-total">GRAND TOTAL: ${formatCurrency(finalGrandTotal)}</div>
+                        <div class="pfs-profit">Total Project Profit: ${formatCurrency(profit)}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function updateDashboard() {
+            const sections = ['structural', 'kitchen', 'bathroom', 'general'];
+            const budget = parseFloat(document.getElementById('projectBudget').value) || 0;
+            let totalCost = 0;
+            let highestSection = '';
+            let highestAmount = 0;
+            
+            sections.forEach(section => {
+                const sectionElement = document.getElementById(section + 'SectionTotal');
+                const sectionTotal = sectionElement ? parseFloat(sectionElement.textContent.replace('₱', '').replace(/,/g, '')) || 0 : 0;
+                totalCost += sectionTotal;
+                
+                if (sectionTotal > highestAmount) {
+                    highestAmount = sectionTotal;
+                    highestSection = section.charAt(0).toUpperCase() + section.slice(1);
+                }
+                
+                // Update dashboard amounts
+                const amountElement = document.getElementById(section + 'Amount');
+                if (amountElement) {
+                    amountElement.textContent = formatCurrency(sectionTotal);
+                }
+                
+                // Update progress bars
+                const barElement = document.getElementById(section + 'Bar');
+                if (barElement && totalCost > 0) {
+                    const percentage = budget > 0 ? (sectionTotal / budget * 100) : (sectionTotal / totalCost * 100);
+                    const displayPercentage = Math.min(percentage, 100);
+                    barElement.style.width = displayPercentage + '%';
+                    barElement.textContent = displayPercentage.toFixed(1) + '%';
+                }
+            });
+            
+            // Update dashboard cards
+            document.getElementById('dashTotalCost').textContent = formatCurrency(totalCost);
+            
+            if (budget > 0) {
+                const remaining = budget - totalCost;
+                const utilization = (totalCost / budget * 100);
+                
+                document.getElementById('dashBudgetRemaining').textContent = formatCurrency(remaining);
+                document.getElementById('dashBudgetUtil').textContent = utilization.toFixed(1) + '%';
+            } else {
+                document.getElementById('dashBudgetRemaining').textContent = '₱0.00';
+                document.getElementById('dashBudgetUtil').textContent = '0%';
+            }
+            
+            document.getElementById('dashHighestSection').textContent = highestSection || '-';
+        }
+
+        function addStructuralRow() {
+            addRowToTable('structuralTable', 'structural', getStructuralOptions());
+        }
+
+        function addKitchenRow() {
+            addRowToTable('kitchenTable', 'kitchen', getKitchenOptions());
+        }
+
+        function addBathroomRow() {
+            addRowToTable('bathroomTable', 'bathroom', getBathroomOptions());
+        }
+
+        function addGeneralRow() {
+            addRowToTable('generalTable', 'general', getGeneralOptions());
+        }
+
+        function addRowToTable(tableId, section, options) {
+            const table = document.getElementById(tableId);
+            const tbody = table.querySelector('tbody');
+            const newRow = tbody.insertRow();
+            
+            const itemNumber = section.charAt(0).toUpperCase() + '.' + itemCounters[section];
+            itemCounters[section]++;
+            
+            newRow.innerHTML = `
+                <td>${itemNumber}</td>
+                <td>
+                    <select class="material-select" onchange="updateCosts(this)">
+                        <option value="">Select Material/Service</option>
+                        ${options}
+                    </select>
+                </td>
+                <td><input type="number" class="qty-input" value="1" oninput="calculateRowTotal(this)"></td>
+                <td>set</td>
+                <td>
+                    <select class="cost-class-select" onchange="updateCosts(this)">
+                        <option value="a">Class A</option>
+                        <option value="b">Class B</option>
+                        <option value="c">Class C</option>
+                    </select>
+                </td>
+                <td class="amount-cell item-cost">₱0.00</td>
+                <td class="amount-cell discrepancy-cost">₱0.00</td>
+                <td class="amount-cell overhead-cost">₱0.00</td>
+                <td class="amount-cell amount">₱0.00</td>
+                <td class="amount-cell vat-cost">₱0.00</td>
+                <td class="amount-cell total-amount">₱0.00</td>
+                <td><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+            `;
+        }
+
+        function getStructuralOptions() {
+            return `
+                <option value="columns" data-a="45000" data-b="42000" data-c="38000">COLUMNS - 4 Nos. 25x25cm Concrete columns</option>
+                <option value="cement" data-a="280" data-b="260" data-c="240">Republic Portland Concrete Cement 40kg</option>
+                <option value="sand" data-a="1200" data-b="1100" data-c="1000">Screened Sand (per cu.m)</option>
+                <option value="gravel" data-a="1800" data-b="1650" data-c="1500">Gravel (per cu.m)</option>
+                <option value="rebar16" data-a="850" data-b="800" data-c="750">16mm Reinforcement Bar (6M)</option>
+                <option value="rebar10" data-a="420" data-b="390" data-c="360">10mm Reinforcement Bar (6M)</option>
+                <option value="tiewire" data-a="180" data-b="165" data-c="150">Tie Wire #16 (per kg)</option>
+                <option value="phenolic" data-a="2800" data-b="2600" data-c="2400">Phenolic Board 18mm</option>
+                <option value="lumber" data-a="450" data-b="420" data-c="380">Good Lumber 10ft</option>
+                <option value="beams" data-a="35000" data-b="32000" data-c="29000">Beams - Ground Level & Roof Beams</option>
+                <option value="rebar12" data-a="650" data-b="600" data-c="550">12mm Reinforcement Bar (6M)</option>
+                <option value="design" data-a="25000" data-b="22000" data-c="20000">Concept Design & Project Management</option>
+                <option value="labor" data-a="15000" data-b="13500" data-c="12000">Labour Charge (per day)</option>
+                <option value="outsource" data-a="18000" data-b="16500" data-c="15000">Outsource Labour (per day)</option>
+                <option value="delivery" data-a="3500" data-b="3200" data-c="3000">Workshop to Site Delivery - L300</option>
+                <option value="mobilization" data-a="8000" data-b="7500" data-c="7000">Mobilization Fund</option>
+                <option value="materials_delivery" data-a="5000" data-b="4500" data-c="4000">Materials Delivery Cost</option>
+                <option value="utilities" data-a="3000" data-b="2800" data-c="2500">Workshop Utilities & Contingencies</option>
+            `;
+        }
+
+        function getKitchenOptions() {
+            return `
+                <option value="cabinet_upper" data-a="25000" data-b="22000" data-c="18000">Upper Kitchen Cabinet (per linear meter)</option>
+                <option value="cabinet_lower" data-a="35000" data-b="30000" data-c="25000">Lower Kitchen Cabinet (per linear meter)</option>
+                <option value="countertop_granite" data-a="4500" data-b="4000" data-c="3500">Granite Countertop (per sq.m)</option>
+                <option value="countertop_quartz" data-a="6500" data-b="6000" data-c="5500">Quartz Countertop (per sq.m)</option>
+                <option value="sink_stainless" data-a="8500" data-b="7500" data-c="6500">Stainless Steel Kitchen Sink</option>
+                <option value="faucet_kitchen" data-a="3500" data-b="3000" data-c="2500">Kitchen Faucet</option>
+                <option value="tiles_backsplash" data-a="850" data-b="750" data-c="650">Backsplash Tiles (per sq.m)</option>
+                <option value="range_hood" data-a="15000" data-b="12000" data-c="10000">Range Hood</option>
+                <option value="gas_range" data-a="25000" data-b="20000" data-c="15000">Gas Range/Cooktop</option>
+                <option value="kitchen_lighting" data-a="2500" data-b="2000" data-c="1500">Kitchen Lighting (per fixture)</option>
+            `;
+        }
+
+        function getBathroomOptions() {
+            return `
+                <option value="toilet_bowl" data-a="12000" data-b="10000" data-c="8000">Toilet Bowl & Tank</option>
+                <option value="shower_set" data-a="8500" data-b="7000" data-c="5500">Shower Set with Mixer</option>
+                <option value="lavatory" data-a="6500" data-b="5500" data-c="4500">Lavatory/Wash Basin</option>
+                <option value="faucet_lavatory" data-a="2500" data-b="2000" data-c="1500">Lavatory Faucet</option>
+                <option value="tiles_wall" data-a="650" data-b="550" data-c="450">Wall Tiles (per sq.m)</option>
+                <option value="tiles_floor" data-a="750" data-b="650" data-c="550">Floor Tiles (per sq.m)</option>
+                <option value="mirror" data-a="3500" data-b="3000" data-c="2500">Bathroom Mirror</option>
+                <option value="exhaust_fan" data-a="2800" data-b="2300" data-c="1800">Exhaust Fan</option>
+                <option value="accessories" data-a="1500" data-b="1200" data-c="1000">Bathroom Accessories Set</option>
+                <option value="waterproofing" data-a="450" data-b="400" data-c="350">Waterproofing (per sq.m)</option>
+                <option value="plumbing_rough" data-a="8000" data-b="7000" data-c="6000">Rough Plumbing Installation</option>
+            `;
+        }
+
+        function getGeneralOptions() {
+            return `
+                <option value="painting_interior" data-a="180" data-b="150" data-c="120">Interior Painting (per sq.m)</option>
+                <option value="painting_exterior" data-a="220" data-b="180" data-c="150">Exterior Painting (per sq.m)</option>
+                <option value="flooring_tiles" data-a="850" data-b="750" data-c="650">Floor Tiles Installation (per sq.m)</option>
+                <option value="flooring_vinyl" data-a="450" data-b="400" data-c="350">Vinyl Flooring (per sq.m)</option>
+                <option value="doors_interior" data-a="8500" data-b="7500" data-c="6500">Interior Door with Frame</option>
+                <option value="windows_aluminum" data-a="4500" data-b="4000" data-c="3500">Aluminum Window (per sq.m)</option>
+                <option value="electrical_wiring" data-a="350" data-b="300" data-c="250">Electrical Wiring (per meter)</option>
+                <option value="switches_outlets" data-a="250" data-b="200" data-c="150">Switches & Outlets (per piece)</option>
+                <option value="ceiling_gypsum" data-a="320" data-b="280" data-c="240">Gypsum Board Ceiling (per sq.m)</option>
+                <option value="insulation" data-a="180" data-b="150" data-c="120">Insulation Material (per sq.m)</option>
+            `;
+        }
+
+        function removeRow(button) {
+            const row = button.closest('tr');
+            row.remove();
+            calculateSectionTotals();
+            updateDashboard();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateSectionTotals();
+            updateDashboard();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'971cd29247f0707a',t:'MTc1NTYzOTc2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
