@@ -1,11 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ArtiCentro Designs - Smart BOQ System</title>
+    
+    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+
     <style>
         * {
             margin: 0;
@@ -1061,31 +1064,9 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize tab display properly
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.style.display = 'none';
-            });
+            console.log('Initializing ArtiCentro BOQ System...');
             
-            // Show only BOQ tab initially
-            const boqTab = document.getElementById('boq-tab');
-            if (boqTab) {
-                boqTab.classList.add('active');
-                boqTab.style.display = 'block';
-                boqTab.style.visibility = 'visible';
-            }
-            
-            // Hide other tabs explicitly
-            const summaryTab = document.getElementById('summary-tab');
-            const dashboardTab = document.getElementById('dashboard-tab');
-            if (summaryTab) {
-                summaryTab.classList.remove('active');
-                summaryTab.style.display = 'none';
-            }
-            if (dashboardTab) {
-                dashboardTab.classList.remove('active');
-                dashboardTab.style.display = 'none';
-            }
-            
+            // Force all containers to be visible immediately
             const tableContainer = document.querySelector('.table-container');
             if (tableContainer) {
                 tableContainer.style.display = 'block';
@@ -1093,40 +1074,173 @@
                 tableContainer.style.opacity = '1';
             }
             
+            // Load saved state first
             loadLogo();
+            
+            // Initialize tab display properly - force BOQ tab to be visible
+            initializeTabs();
+            
+            // Load projects and data
             loadAllProjects();
             
-            // Force initial render after a short delay
+            // Force initial render with multiple attempts
             setTimeout(() => {
                 renderTable();
                 renderSummaryTable();
                 updateSummary();
                 updateDashboard();
-            }, 100);
+                loadLogo(); // Load logo again to ensure it persists
+                console.log('Initial render complete');
+            }, 50);
+            
+            setTimeout(() => {
+                renderTable();
+                renderSummaryTable();
+                updateSummary();
+                updateDashboard();
+                loadLogo();
+            }, 200);
+            
+            setTimeout(() => {
+                renderTable();
+                renderSummaryTable();
+                updateSummary();
+                updateDashboard();
+                loadLogo();
+            }, 500);
             
             // Auto-save every 30 seconds
             setInterval(autoSaveCurrentProject, 30000);
             
             // Add event listeners for project info
             ['projectId', 'projectName', 'clientName', 'projectBudget', 'projectType'].forEach(id => {
-                document.getElementById(id).addEventListener('change', autoSaveCurrentProject);
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('change', function() {
+                        if (id === 'projectBudget') {
+                            formatProjectBudget();
+                        }
+                        autoSaveCurrentProject();
+                    });
+                    element.addEventListener('input', function() {
+                        if (id === 'projectBudget') {
+                            formatProjectBudget();
+                        }
+                        autoSaveCurrentProject();
+                    });
+                }
             });
             
-            // Add formatting for project budget
-            document.getElementById('projectBudget').addEventListener('input', function() {
-                formatProjectBudget();
+            // Handle page visibility changes and refresh events
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    setTimeout(() => {
+                        loadLogo();
+                        renderTable();
+                        renderSummaryTable();
+                        updateSummary();
+                        updateDashboard();
+                        initializeTabs();
+                    }, 100);
+                }
+            });
+            
+            // Handle page refresh/reload
+            window.addEventListener('beforeunload', function() {
                 autoSaveCurrentProject();
             });
-            document.getElementById('projectBudget').addEventListener('blur', formatProjectBudget);
+            
+            // Handle page load
+            window.addEventListener('load', function() {
+                setTimeout(() => {
+                    loadLogo();
+                    initializeTabs();
+                    renderTable();
+                    renderSummaryTable();
+                    updateSummary();
+                    updateDashboard();
+                }, 100);
+            });
         });
+
+        function initializeTabs() {
+            // Get saved active tab or default to BOQ
+            const savedActiveTab = localStorage.getItem('articentro_active_tab') || 'boq';
+            
+            // Initialize all tabs as hidden
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = 'none';
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show the saved active tab
+            const activeTab = document.getElementById(savedActiveTab + '-tab');
+            const activeBtn = document.querySelector(`[onclick="showTab('${savedActiveTab}')"]`);
+            
+            if (activeTab && activeBtn) {
+                activeTab.classList.add('active');
+                activeTab.style.display = 'block';
+                activeTab.style.visibility = 'visible';
+                activeTab.style.opacity = '1';
+                activeBtn.classList.add('active');
+            } else {
+                // Fallback to BOQ tab
+                const boqTab = document.getElementById('boq-tab');
+                const boqBtn = document.querySelector(`[onclick="showTab('boq')"]`);
+                if (boqTab && boqBtn) {
+                    boqTab.classList.add('active');
+                    boqTab.style.display = 'block';
+                    boqTab.style.visibility = 'visible';
+                    boqTab.style.opacity = '1';
+                    boqBtn.classList.add('active');
+                }
+            }
+            
+            // Ensure all table containers are visible
+            document.querySelectorAll('.table-container').forEach(container => {
+                container.style.display = 'block';
+                container.style.visibility = 'visible';
+                container.style.opacity = '1';
+            });
+            
+            // Force render based on active tab
+            setTimeout(() => {
+                if (savedActiveTab === 'dashboard') {
+                    updateDashboard();
+                } else if (savedActiveTab === 'summary') {
+                    renderSummaryTable();
+                    updateSummaryTotal();
+                } else {
+                    renderTable();
+                    updateSummary();
+                }
+            }, 50);
+        }
 
         function formatProjectBudget() {
             const input = document.getElementById('projectBudget');
-            let value = input.value.replace(/,/g, '');
+            if (!input || !input.value) return;
+            
+            let value = input.value.toString().replace(/,/g, '');
             if (!isNaN(value) && value !== '') {
                 const numValue = parseFloat(value);
-                input.value = numValue.toLocaleString('en-US');
+                if (numValue >= 0) {
+                    input.value = numValue.toLocaleString('en-US');
+                }
             }
+        }
+
+        function parseProjectBudget() {
+            const input = document.getElementById('projectBudget');
+            if (!input) return 0;
+            
+            const value = input.value.replace(/,/g, '');
+            return parseFloat(value) || 0;
         }
 
         function addRow() {
@@ -1437,7 +1551,7 @@
             const additionalCost = additionalCharges.reduce((sum, charge) => sum + charge.amount, 0);
             const totalCost = baseCost + additionalCost;
             const totalItems = boqData.length;
-            const projectBudget = parseFloat(document.getElementById('projectBudget').value) || 0;
+            const projectBudget = parseProjectBudget();
             const budgetUtil = projectBudget > 0 ? (totalCost / projectBudget * 100) : 0;
             const remainingBudget = projectBudget - totalCost;
             
@@ -1509,23 +1623,48 @@
         function loadLogo() {
             const savedLogo = localStorage.getItem('articentro_logo');
             if (savedLogo) {
-                const logoContainer = document.querySelector('.logo');
-                const logoText = document.getElementById('logoText');
-                
-                let logoImg = logoContainer.querySelector('img');
-                if (!logoImg) {
-                    logoImg = document.createElement('img');
-                    logoContainer.appendChild(logoImg);
-                }
-                
-                logoImg.src = savedLogo;
-                logoImg.onload = function() {
-                    logoText.style.display = 'none';
-                };
-                logoImg.onerror = function() {
-                    logoText.style.display = 'block';
+                try {
+                    const logoContainer = document.querySelector('.logo');
+                    const logoText = document.getElementById('logoText');
+                    
+                    if (logoContainer && logoText) {
+                        let logoImg = logoContainer.querySelector('img');
+                        if (!logoImg) {
+                            logoImg = document.createElement('img');
+                            logoImg.style.width = '100%';
+                            logoImg.style.height = '100%';
+                            logoImg.style.objectFit = 'contain';
+                            logoImg.style.borderRadius = '12px';
+                            logoImg.style.background = 'rgba(255, 255, 255, 0.9)';
+                            logoImg.style.position = 'absolute';
+                            logoImg.style.top = '0';
+                            logoImg.style.left = '0';
+                            logoImg.style.zIndex = '2';
+                            logoContainer.appendChild(logoImg);
+                        }
+                        
+                        logoImg.src = savedLogo;
+                        logoImg.onload = function() {
+                            if (logoText) {
+                                logoText.style.display = 'none';
+                            }
+                            console.log('Logo loaded successfully');
+                        };
+                        logoImg.onerror = function() {
+                            if (logoText) {
+                                logoText.style.display = 'block';
+                            }
+                            if (logoImg && logoImg.parentNode) {
+                                logoImg.parentNode.removeChild(logoImg);
+                            }
+                            localStorage.removeItem('articentro_logo');
+                            console.log('Logo failed to load, removed from storage');
+                        };
+                    }
+                } catch (error) {
+                    console.error('Error loading logo:', error);
                     localStorage.removeItem('articentro_logo');
-                };
+                }
             }
         }
 
@@ -1812,8 +1951,12 @@
                 document.getElementById('vatPercentage').textContent = vatPercentage;
                 document.getElementById('dashVatPercentage').textContent = vatPercentage;
                 
-                // Format project budget with commas
-                formatProjectBudget();
+                // Format project budget with commas - ensure value exists first
+                setTimeout(() => {
+                    if (document.getElementById('projectBudget').value) {
+                        formatProjectBudget();
+                    }
+                }, 50);
                 
                 // Force all containers to be visible
                 const tableContainer = document.querySelector('.table-container');
@@ -2116,6 +2259,9 @@
 
         // Tab switching functionality
         function showTab(tabName) {
+            // Save active tab to localStorage
+            localStorage.setItem('articentro_active_tab', tabName);
+            
             // Hide all tab contents
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
@@ -2129,28 +2275,46 @@
             
             // Show selected tab content
             const selectedTab = document.getElementById(tabName + '-tab');
-            selectedTab.classList.add('active');
-            selectedTab.style.display = 'block';
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+                selectedTab.style.display = 'block';
+            }
             
             // Add active class to clicked tab button
-            event.target.classList.add('active');
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // Fallback for programmatic calls
+                const tabBtn = document.querySelector(`[onclick="showTab('${tabName}')"]`);
+                if (tabBtn) {
+                    tabBtn.classList.add('active');
+                }
+            }
             
-            // Update content based on tab
-            if (tabName === 'dashboard') {
-                setTimeout(() => {
+            // Update content based on tab with multiple refresh attempts
+            setTimeout(() => {
+                if (tabName === 'dashboard') {
                     updateDashboard();
-                }, 100);
-            } else if (tabName === 'summary') {
-                setTimeout(() => {
+                } else if (tabName === 'summary') {
                     renderSummaryTable();
                     updateSummaryTotal();
-                }, 100);
-            } else if (tabName === 'boq') {
-                setTimeout(() => {
+                } else if (tabName === 'boq') {
                     renderTable();
                     updateSummary();
-                }, 100);
-            }
+                }
+            }, 50);
+            
+            setTimeout(() => {
+                if (tabName === 'dashboard') {
+                    updateDashboard();
+                } else if (tabName === 'summary') {
+                    renderSummaryTable();
+                    updateSummaryTotal();
+                } else if (tabName === 'boq') {
+                    renderTable();
+                    updateSummary();
+                }
+            }, 200);
         }
 
         // Additional charges management
@@ -2217,7 +2381,7 @@
             const subtotal = totalCostFromBOQ + marginCost + additionalCost - discountAmount;
             const vatAmount = subtotal * (vatPercentage / 100);
             const grandTotal = subtotal + vatAmount;
-            const projectBudget = parseFloat(document.getElementById('projectBudget').value) || 0;
+            const projectBudget = parseProjectBudget();
             const remainingBudget = projectBudget - grandTotal;
             const budgetUtilization = projectBudget > 0 ? (grandTotal / projectBudget * 100) : 0;
             
@@ -2517,107 +2681,25 @@
                     ctx.fillStyle = colors[index % colors.length];
                     ctx.fillRect(legendX, legendStartY, 12, 12);
                     
-                    // Draw text
+                    // Draw label text
                     ctx.fillStyle = '#2F4F2F';
-                    ctx.font = '9px Arial, sans-serif';
+                    ctx.font = '10px Arial';
                     ctx.textAlign = 'left';
-                    
-                    // Truncate long labels to fit
-                    let displayLabel = label.length > 14 ? label.substring(0, 14) + '...' : label;
-                    ctx.fillText(displayLabel, legendX + 16, legendStartY + 9);
-                    
-                    // Add second line if needed
-                    if (legendIndex < activeLabels.length - 1 && (legendIndex + 1) % 3 === 0) {
-                        // Move to next row every 3 items
-                    }
+                    ctx.fillText(label.substring(0, 12), legendX + 16, legendStartY + 9);
                     
                     legendIndex++;
                 }
             });
         }
 
-        // Buffer percentage editing functions
-        function editBufferPercentage(type) {
-            let currentValue, elementId;
-            
-            switch(type) {
-                case 'discrepancy':
-                    currentValue = discrepancyPercentage;
-                    elementId = 'discrepancyPercentage';
-                    break;
-                case 'operation':
-                    currentValue = operationPercentage;
-                    elementId = 'operationPercentage';
-                    break;
-                case 'contingency':
-                    currentValue = contingencyPercentage;
-                    elementId = 'contingencyPercentage';
-                    break;
-            }
-            
-            const newValue = prompt(`Enter new ${type} percentage:`, currentValue);
-            if (newValue !== null && !isNaN(newValue) && newValue >= 0) {
-                const percentage = parseFloat(newValue);
-                
-                switch(type) {
-                    case 'discrepancy':
-                        discrepancyPercentage = percentage;
-                        break;
-                    case 'operation':
-                        operationPercentage = percentage;
-                        break;
-                    case 'contingency':
-                        contingencyPercentage = percentage;
-                        break;
-                }
-                
-                document.getElementById(elementId).textContent = percentage;
-                
-                // Recalculate all rows
-                boqData.forEach(row => calculateRow(row));
-                renderTable();
-                updateSummary();
-                updateDashboard();
-                autoSaveCurrentProject();
-            }
-        }
-        
-        // VAT percentage editing function
-        function editVatPercentage() {
-            const newValue = prompt(`Enter new VAT percentage:`, vatPercentage);
-            if (newValue !== null && !isNaN(newValue) && newValue >= 0) {
-                vatPercentage = parseFloat(newValue);
-                document.getElementById('vatPercentage').textContent = vatPercentage;
-                document.getElementById('dashVatPercentage').textContent = vatPercentage;
-                
-                updateDashboard();
-                autoSaveCurrentProject();
-            }
-        }
-
-        // Discount functions
-        function updateDiscount() {
-            discountAmount = parseFloat(document.getElementById('discountAmount').value) || 0;
-            updateDashboard();
-            autoSaveCurrentProject();
-        }
-        
-        function clearDiscount() {
-            discountAmount = 0;
-            document.getElementById('discountAmount').value = '';
-            document.getElementById('discountDescription').value = 'Project Discount';
-            updateDashboard();
-            autoSaveCurrentProject();
-        }
-
-        // Summary Table Functions
+        // Summary table functions
         function addSummaryRow() {
             const row = {
                 id: Date.now(),
-                item: summaryItemCounter++,
+                itemNo: summaryItemCounter++,
                 description: '',
-                quantity: 1,
-                unit: 'lot',
+                quantity: 0,
+                unit: '',
                 totalCost: 0,
                 marginCost: 0,
                 totalAmount: 0
@@ -2629,127 +2711,22 @@
             autoSaveCurrentProject();
         }
 
-        function generateSummaryFromBOQ() {
-            if (boqData.length === 0) {
-                alert('No BOQ data available to generate summary. Please add items to the BOQ first.');
-                return;
-            }
-            
-            // Group BOQ data by category
-            const categoryGroups = {};
-            boqData.forEach(row => {
-                if (row.category && row.totalAmount > 0) {
-                    if (!categoryGroups[row.category]) {
-                        categoryGroups[row.category] = {
-                            totalCost: 0,
-                            items: []
-                        };
-                    }
-                    categoryGroups[row.category].totalCost += row.totalAmount;
-                    categoryGroups[row.category].items.push(row);
-                }
-            });
-            
-            // Clear existing summary data
-            summaryData = [];
-            summaryItemCounter = 1;
-            
-            // Create summary rows for each category
-            Object.entries(categoryGroups).forEach(([category, data]) => {
-                const row = {
-                    id: Date.now() + Math.random(),
-                    item: summaryItemCounter++,
-                    description: category,
-                    quantity: 1,
-                    unit: 'lot',
-                    totalCost: data.totalCost,
-                    marginCost: data.totalCost * (marginPercentage / 100),
-                    totalAmount: data.totalCost + (data.totalCost * (marginPercentage / 100))
-                };
-                summaryData.push(row);
-            });
-            
+        function deleteSummaryRow(id) {
+            summaryData = summaryData.filter(row => row.id !== id);
             renderSummaryTable();
             updateSummaryTotal();
             autoSaveCurrentProject();
-            
-            alert(`Summary generated with ${summaryData.length} categories from BOQ data!`);
         }
 
-        function renderSummaryTable() {
-            const tbody = document.getElementById('summaryTableBody');
-            tbody.innerHTML = '';
-            
-            summaryData.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="text-align: center; font-weight: 600;">${row.item}</td>
-                    <td>
-                        <input type="text" class="editable" value="${row.description}" 
-                               onchange="updateSummaryRow(${row.id}, 'description', this.value)" 
-                               placeholder="Enter description" style="width: 100%;">
-                    </td>
-                    <td>
-                        <input type="number" class="editable" value="${row.quantity}" 
-                               onchange="updateSummaryRow(${row.id}, 'quantity', parseFloat(this.value) || 1)" 
-                               step="0.01" min="0" style="width: 100%; text-align: center;">
-                    </td>
-                    <td>
-                        <select class="editable" onchange="updateSummaryRow(${row.id}, 'unit', this.value)" style="width: 100%;">
-                            ${units.map(unit => `<option value="${unit}" ${row.unit === unit ? 'selected' : ''}>${unit}</option>`).join('')}
-                        </select>
-                    </td>
-                    <td>
-                        <input type="number" class="editable" value="${row.totalCost}" 
-                               onchange="updateSummaryRow(${row.id}, 'totalCost', parseFloat(this.value) || 0)" 
-                               step="0.01" min="0" style="width: 100%; text-align: right;">
-                    </td>
-                    <td class="calculated" style="text-align: right;">₱${row.marginCost.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-                    <td class="calculated" style="text-align: right; font-weight: 700;">₱${row.totalAmount.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-                    <td>
-                        <div class="row-actions">
-                            <button class="duplicate-btn" onclick="duplicateSummaryRow(${row.id})" title="Duplicate">📋</button>
-                            <button class="delete-btn" onclick="deleteSummaryRow(${row.id})" title="Delete">🗑️</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            
-            // Add subtotal and total rows to summary table
-            if (summaryData.length > 0) {
-                // Calculate totals
-                const subtotalCost = summaryData.reduce((sum, row) => sum + (row.totalCost || 0), 0);
-                const subtotalMargin = summaryData.reduce((sum, row) => sum + (row.marginCost || 0), 0);
-                const subtotalTotal = summaryData.reduce((sum, row) => sum + (row.totalAmount || 0), 0);
-                
-                // Subtotal row
-                const subtotalRow = document.createElement('tr');
-                subtotalRow.style.backgroundColor = 'rgba(154, 205, 50, 0.2)';
-                subtotalRow.style.fontWeight = 'bold';
-                subtotalRow.innerHTML = `
-                    <td colspan="4" style="text-align: right; padding: 12px; font-weight: 700; color: #2F4F2F;">SUBTOTAL:</td>
-                    <td class="calculated" style="font-weight: 700; text-align: right;">₱${subtotalCost.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-                    <td class="calculated" style="font-weight: 700; text-align: right;">₱${subtotalMargin.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-                    <td class="calculated" style="font-weight: 700; text-align: right; background: rgba(154, 205, 50, 0.4);">₱${subtotalTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-                    <td></td>
-                `;
-                tbody.appendChild(subtotalRow);
-                
-                // Grand Total row
-                const grandTotalRow = document.createElement('tr');
-                grandTotalRow.style.backgroundColor = 'rgba(107, 142, 35, 0.3)';
-                grandTotalRow.style.fontWeight = 'bold';
-                grandTotalRow.innerHTML = `
-                    <td colspan="6" style="text-align: right; padding: 12px; font-weight: 700; color: #2F4F2F; font-size: 14px;">GRAND TOTAL:</td>
-                    <td class="calculated" style="font-weight: 700; text-align: right; background: rgba(107, 142, 35, 0.4); font-size: 16px;">₱${subtotalTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-                    <td></td>
-                `;
-                tbody.appendChild(grandTotalRow);
+        function duplicateSummaryRow(id) {
+            const originalRow = summaryData.find(row => row.id === id);
+            if (originalRow) {
+                const newRow = { ...originalRow, id: Date.now(), itemNo: summaryItemCounter++ };
+                summaryData.push(newRow);
+                renderSummaryTable();
+                updateSummaryTotal();
+                autoSaveCurrentProject();
             }
-            
-            // Update margin percentage display
-            document.getElementById('summaryMarginPercentage').textContent = marginPercentage;
         }
 
         function updateSummaryRow(id, field, value) {
@@ -2764,44 +2741,118 @@
         }
 
         function calculateSummaryRow(row) {
+            // Margin Cost = Total Cost × margin %
             row.marginCost = row.totalCost * (marginPercentage / 100);
+            
+            // Total Amount = Total Cost + Margin Cost
             row.totalAmount = row.totalCost + row.marginCost;
+        }
+
+        function renderSummaryTable() {
+            const tbody = document.getElementById('summaryTableBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            summaryData.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.itemNo}</td>
+                    <td><input type="text" class="editable" value="${row.description}" onchange="updateSummaryRow(${row.id}, 'description', this.value)" placeholder="Description"></td>
+                    <td><input type="number" class="editable" value="${row.quantity}" onchange="updateSummaryRow(${row.id}, 'quantity', parseFloat(this.value) || 0)" step="0.01"></td>
+                    <td>
+                        <select class="editable" onchange="updateSummaryRow(${row.id}, 'unit', this.value)">
+                            <option value="">Unit</option>
+                            ${units.map(unit => `<option value="${unit}" ${row.unit === unit ? 'selected' : ''}>${unit}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td><input type="number" class="editable" value="${row.totalCost}" onchange="updateSummaryRow(${row.id}, 'totalCost', parseFloat(this.value) || 0)" step="0.01"></td>
+                    <td class="calculated">₱${row.marginCost.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                    <td class="calculated">₱${row.totalAmount.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="duplicate-btn" onclick="duplicateSummaryRow(${row.id})" title="Duplicate">📋</button>
+                            <button class="delete-btn" onclick="deleteSummaryRow(${row.id})" title="Delete">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Add total row
+            if (summaryData.length > 0) {
+                const totalCost = summaryData.reduce((sum, row) => sum + (row.totalCost || 0), 0);
+                const totalMargin = summaryData.reduce((sum, row) => sum + (row.marginCost || 0), 0);
+                const grandTotal = summaryData.reduce((sum, row) => sum + (row.totalAmount || 0), 0);
+                
+                const totalRow = document.createElement('tr');
+                totalRow.style.backgroundColor = 'rgba(154, 205, 50, 0.3)';
+                totalRow.style.fontWeight = 'bold';
+                totalRow.innerHTML = `
+                    <td colspan="4" style="text-align: right; padding: 12px; font-weight: 700; color: #2F4F2F;">TOTAL:</td>
+                    <td class="calculated" style="font-weight: 700;">₱${totalCost.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                    <td class="calculated" style="font-weight: 700;">₱${totalMargin.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                    <td class="calculated" style="font-weight: 700; background: rgba(107, 142, 35, 0.4);">₱${grandTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                    <td></td>
+                `;
+                tbody.appendChild(totalRow);
+            }
         }
 
         function updateSummaryTotal() {
             const grandTotal = summaryData.reduce((sum, row) => sum + (row.totalAmount || 0), 0);
-            document.getElementById('summaryGrandTotal').textContent = `₱${grandTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}`;
-        }
-
-        function deleteSummaryRow(id) {
-            summaryData = summaryData.filter(row => row.id !== id);
-            renderSummaryTable();
-            updateSummaryTotal();
-            autoSaveCurrentProject();
-        }
-
-        function duplicateSummaryRow(id) {
-            const originalRow = summaryData.find(row => row.id === id);
-            if (originalRow) {
-                const newRow = { 
-                    ...originalRow, 
-                    id: Date.now(), 
-                    item: summaryItemCounter++,
-                    description: originalRow.description + ' (Copy)'
-                };
-                summaryData.push(newRow);
-                renderSummaryTable();
-                updateSummaryTotal();
-                autoSaveCurrentProject();
+            const summaryTotalElement = document.getElementById('summaryGrandTotal');
+            if (summaryTotalElement) {
+                summaryTotalElement.textContent = `₱${grandTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}`;
             }
         }
 
-        function exportSummaryToExcel() {
-            if (summaryData.length === 0) {
-                alert('No summary data to export. Please add summary items first.');
+        function generateSummaryFromBOQ() {
+            if (boqData.length === 0) {
+                alert('No BOQ data available to generate summary.');
                 return;
             }
             
+            // Group BOQ data by category
+            const categoryTotals = {};
+            
+            boqData.forEach(row => {
+                if (row.category && row.totalAmount > 0) {
+                    if (!categoryTotals[row.category]) {
+                        categoryTotals[row.category] = 0;
+                    }
+                    categoryTotals[row.category] += row.totalAmount;
+                }
+            });
+            
+            // Clear existing summary data
+            summaryData = [];
+            summaryItemCounter = 1;
+            
+            // Create summary rows from categories
+            Object.entries(categoryTotals).forEach(([category, total]) => {
+                const row = {
+                    id: Date.now() + Math.random(),
+                    itemNo: summaryItemCounter++,
+                    description: category,
+                    quantity: 1,
+                    unit: 'lot',
+                    totalCost: total,
+                    marginCost: 0,
+                    totalAmount: 0
+                };
+                calculateSummaryRow(row);
+                summaryData.push(row);
+            });
+            
+            renderSummaryTable();
+            updateSummaryTotal();
+            autoSaveCurrentProject();
+            
+            alert('Summary generated from BOQ data successfully!');
+        }
+
+        function exportSummaryToExcel() {
             const projectInfo = {
                 'Project ID': document.getElementById('projectId').value,
                 'Project Name': document.getElementById('projectName').value,
@@ -2810,19 +2861,12 @@
                 'Project Type': document.getElementById('projectType').value
             };
             
-            const headers = [
-                'Item', 'Description', 'Quantity', 'Unit', 
-                'Total Cost', 'Margin (' + marginPercentage + '%)', 'Total Amount'
-            ];
+            const headers = ['Item No.', 'Description', 'Quantity', 'Unit', 'Total Cost', 'Margin Cost', 'Total Amount'];
             
             const data = summaryData.map(row => [
-                row.item, row.description, row.quantity, row.unit,
+                row.itemNo, row.description, row.quantity, row.unit,
                 row.totalCost, row.marginCost, row.totalAmount
             ]);
-            
-            // Add total row
-            const grandTotal = summaryData.reduce((sum, row) => sum + row.totalAmount, 0);
-            data.push(['', 'TOTAL', '', '', '', '', grandTotal]);
             
             const wb = XLSX.utils.book_new();
             
@@ -2838,32 +2882,62 @@
             XLSX.writeFile(wb, fileName);
         }
 
-        // Handle paste functionality for bulk data entry
-        document.addEventListener('paste', function(e) {
-            if (e.target.classList.contains('editable')) {
-                setTimeout(() => {
-                    const pastedData = e.target.value;
-                    if (pastedData.includes('\t') || pastedData.includes('\n')) {
-                        // Handle tabular data paste
-                        const rows = pastedData.split('\n');
-                        const currentRowId = parseInt(e.target.closest('tr').querySelector('td').textContent);
-                        
-                        rows.forEach((rowData, index) => {
-                            if (rowData.trim()) {
-                                const cells = rowData.split('\t');
-                                if (index === 0) {
-                                    // Update current row
-                                    e.target.value = cells[0] || '';
-                                } else {
-                                    // Add new rows for additional data
-                                    addRow();
-                                }
-                            }
-                        });
-                    }
-                }, 10);
+        // Buffer percentage editing functions
+        function editBufferPercentage(type) {
+            const currentValue = type === 'discrepancy' ? discrepancyPercentage : 
+                               type === 'operation' ? operationPercentage : contingencyPercentage;
+            
+            const newValue = prompt(`Enter new ${type} percentage:`, currentValue);
+            if (newValue !== null && !isNaN(newValue) && newValue >= 0) {
+                const percentage = parseFloat(newValue);
+                
+                if (type === 'discrepancy') {
+                    discrepancyPercentage = percentage;
+                    document.getElementById('discrepancyPercentage').textContent = percentage;
+                } else if (type === 'operation') {
+                    operationPercentage = percentage;
+                    document.getElementById('operationPercentage').textContent = percentage;
+                } else if (type === 'contingency') {
+                    contingencyPercentage = percentage;
+                    document.getElementById('contingencyPercentage').textContent = percentage;
+                }
+                
+                // Recalculate all rows
+                boqData.forEach(row => calculateRow(row));
+                renderTable();
+                updateSummary();
+                updateDashboard();
+                autoSaveCurrentProject();
             }
-        });
+        }
+
+        function editVatPercentage() {
+            const newValue = prompt('Enter new VAT percentage:', vatPercentage);
+            if (newValue !== null && !isNaN(newValue) && newValue >= 0) {
+                vatPercentage = parseFloat(newValue);
+                document.getElementById('dashVatPercentage').textContent = vatPercentage;
+                updateDashboard();
+                autoSaveCurrentProject();
+            }
+        }
+
+        function updateDiscount() {
+            discountAmount = parseFloat(document.getElementById('discountAmount').value) || 0;
+            updateDashboard();
+            autoSaveCurrentProject();
+        }
+
+        function clearDiscount() {
+            discountAmount = 0;
+            document.getElementById('discountAmount').value = '';
+            updateDashboard();
+            autoSaveCurrentProject();
+        }
+
+        // Auto-save function
+        function autoSave() {
+            autoSaveCurrentProject();
+        }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'976e9998f1b3ee6d',t:'MTc1NjQ5NzI2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'976f7f71b474babe',t:'MTc1NjUwNjY3OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
