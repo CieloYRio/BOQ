@@ -617,6 +617,7 @@
     <div class="header">
         <div class="logo-section">
             <div class="logo" onclick="document.getElementById('logoUpload').click()" title="Click to upload logo">
+                <img src="assets/logo.png" alt="AC Logo" id="persistentLogo" style="display: none;" />
                 <span id="logoText">AC</span>
                 <input type="file" id="logoUpload" accept="image/*" onchange="uploadLogo(event)">
             </div>
@@ -1487,15 +1488,22 @@
                 reader.onload = function(e) {
                     const logoContainer = document.querySelector('.logo');
                     const logoText = document.getElementById('logoText');
+                    const persistentLogo = document.getElementById('persistentLogo');
                     
-                    // Create or update image element
-                    let logoImg = logoContainer.querySelector('img');
+                    // Hide persistent logo when user uploads a new one
+                    if (persistentLogo) {
+                        persistentLogo.style.display = 'none';
+                    }
+                    
+                    // Create or update uploaded image element
+                    let logoImg = logoContainer.querySelector('img:not(#persistentLogo)');
                     if (!logoImg) {
                         logoImg = document.createElement('img');
                         logoContainer.appendChild(logoImg);
                     }
                     
                     logoImg.src = e.target.result;
+                    logoImg.style.display = 'block';
                     logoText.style.display = 'none';
                     
                     // Save logo to localStorage
@@ -1506,18 +1514,47 @@
         }
 
         function loadLogo() {
+            const persistentLogo = document.getElementById('persistentLogo');
+            const logoText = document.getElementById('logoText');
+            const logoContainer = document.querySelector('.logo');
+            
+            // First try to load the persistent logo
+            if (persistentLogo) {
+                persistentLogo.onload = function() {
+                    persistentLogo.style.display = 'block';
+                    logoText.style.display = 'none';
+                    // Hide any uploaded logo if persistent logo loads
+                    const uploadedImg = logoContainer.querySelector('img:not(#persistentLogo)');
+                    if (uploadedImg) {
+                        uploadedImg.style.display = 'none';
+                    }
+                };
+                persistentLogo.onerror = function() {
+                    persistentLogo.style.display = 'none';
+                    // Fall back to uploaded logo from localStorage
+                    loadUploadedLogo();
+                };
+                // Trigger the load by setting the src again (in case it's cached)
+                persistentLogo.src = persistentLogo.src;
+            } else {
+                loadUploadedLogo();
+            }
+        }
+        
+        function loadUploadedLogo() {
             const savedLogo = localStorage.getItem('articentro_logo');
             if (savedLogo) {
                 const logoContainer = document.querySelector('.logo');
                 const logoText = document.getElementById('logoText');
                 
-                let logoImg = logoContainer.querySelector('img');
+                let logoImg = logoContainer.querySelector('img:not(#persistentLogo)');
                 if (!logoImg) {
                     logoImg = document.createElement('img');
                     logoContainer.appendChild(logoImg);
                 }
                 
                 logoImg.src = savedLogo;
+                logoImg.style.display = 'block';
                 logoImg.onload = function() {
                     logoText.style.display = 'none';
                 };
