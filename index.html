@@ -76,15 +76,10 @@
         .logo {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 24px;
-            color: #000;
-            cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -95,22 +90,11 @@
             box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
         }
 
-        .logo input[type="file"] {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
         .logo img {
             width: 100%;
             height: 100%;
             object-fit: contain;
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.9);
         }
 
         .company-info h1 {
@@ -616,9 +600,8 @@
 <body>
     <div class="header">
         <div class="logo-section">
-            <div class="logo" onclick="document.getElementById('logoUpload').click()" title="Click to upload logo">
-                <span id="logoText">AC</span>
-                <input type="file" id="logoUpload" accept="image/*" onchange="uploadLogo(event)">
+            <div class="logo">
+                <img src="assets/logo.png" alt="AC Logo" />
             </div>
             <div class="company-info">
                 <h1><span style="color: #c0c0c0;">Arti</span><span style="color: #808080;">Centro</span> <span style="color: #9ACD32;">Designs</span></h1>
@@ -1092,7 +1075,6 @@
                 tableContainer.style.opacity = '1';
             }
             
-            loadLogo();
             loadAllProjects();
             
             // Force initial render after a short delay
@@ -1480,53 +1462,7 @@
             }
         }
 
-        function uploadLogo(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const logoContainer = document.querySelector('.logo');
-                    const logoText = document.getElementById('logoText');
-                    
-                    // Create or update image element
-                    let logoImg = logoContainer.querySelector('img');
-                    if (!logoImg) {
-                        logoImg = document.createElement('img');
-                        logoContainer.appendChild(logoImg);
-                    }
-                    
-                    logoImg.src = e.target.result;
-                    logoText.style.display = 'none';
-                    
-                    // Save logo to localStorage
-                    localStorage.setItem('articentro_logo', e.target.result);
-                };
-                reader.readAsDataURL(file);
-            }
-        }
 
-        function loadLogo() {
-            const savedLogo = localStorage.getItem('articentro_logo');
-            if (savedLogo) {
-                const logoContainer = document.querySelector('.logo');
-                const logoText = document.getElementById('logoText');
-                
-                let logoImg = logoContainer.querySelector('img');
-                if (!logoImg) {
-                    logoImg = document.createElement('img');
-                    logoContainer.appendChild(logoImg);
-                }
-                
-                logoImg.src = savedLogo;
-                logoImg.onload = function() {
-                    logoText.style.display = 'none';
-                };
-                logoImg.onerror = function() {
-                    logoText.style.display = 'block';
-                    localStorage.removeItem('articentro_logo');
-                };
-            }
-        }
 
         function exportToExcel() {
             const projectInfo = {
