@@ -3009,5 +3009,230 @@
             autoSaveCurrentProject();
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9785851bf3a6f9a3',t:'MTc1NjczNzU5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<!-- Place this BEFORE </body> -->
+<script type="module">
+  // --- IMPORT FIREBASE SDKS ---
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+  import { getFirestore, collection, doc, setDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+  // --- FIREBASE CONFIG ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyA7eINZE62HO7il12s0Dt_M0S5myMMc7Wc",
+    authDomain: "acd-boq.firebaseapp.com",
+    projectId: "acd-boq",
+    storageBucket: "acd-boq.firebasestorage.app",
+    messagingSenderId: "339472839282",
+    appId: "1:339472839282:web:21cee5c8c7d7349087c8eb"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // --- ALLOWED USERS ---
+  const allowedEmails = [
+    "alona1986.am@gmail.com",
+    "marco.articentro@gmail.com",
+    "elmar.articentro@gmail.com",
+    "benjo.articentro@gmail.com",
+    "kevin.articentro@gmail.com"
+  ];
+
+  // --- LOGIN ---
+  onAuthStateChanged(auth, user => {
+    if(user){
+      if(!allowedEmails.includes(user.email)){
+        alert("You are not authorized to access this BOQ.");
+        signOut(auth);
+      } else {
+        console.log("Logged in as:", user.email);
+        startRealtimeListeners();
+        loadProjectInfo();
+      }
+    } else {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider);
+    }
+  });
+
+  // --- PROJECT INFO ---
+  const projectDoc = doc(db, "projects", "project1");
+  const projectFields = ["projectId","projectName","clientName","projectBudget","projectType"];
+
+  function loadProjectInfo(){
+    onSnapshot(projectDoc, docSnap => {
+      if(!docSnap.exists()) return;
+      const data = docSnap.data();
+      projectFields.forEach(f=>{
+        const el = document.getElementById(f);
+        if(el) el.value = data[f] || "";
+      });
+    });
+
+    projectFields.forEach(f=>{
+      const el = document.getElementById(f);
+      if(el){
+        el.addEventListener("change", e=>{
+          setDoc(projectDoc, {[f]:e.target.value}, {merge:true});
+        });
+      }
+    });
+  }
+
+  // --- REALTIME LISTENERS ---
+  function startRealtimeListeners(){
+    const boqQuery = query(collection(db,"boq-items"), orderBy("updatedAt"));
+    onSnapshot(boqQuery, snapshot=>{
+      snapshot.docChanges().forEach(change=>{
+        const data = change.doc.data();
+        const id = change.doc.id;
+        if(change.type==="added") addBOQRow(id,data);
+        else if(change.type==="modified") updateBOQRow(id,data);
+        else if(change.type==="removed") removeBOQRow(id);
+      });
+    });
+
+    const sumQuery = query(collection(db,"summary-items"), orderBy("updatedAt"));
+    onSnapshot(sumQuery, snapshot=>{
+      snapshot.docChanges().forEach(change=>{
+        const data = change.doc.data();
+        const id = change.doc.id;
+        if(change.type==="added") addSummaryRow(id,data);
+        else if(change.type==="modified") updateSummaryRow(id,data);
+        else if(change.type==="removed") removeSummaryRow(id);
+      });
+    });
+  }
+
+  // --- BOQ FUNCTIONS ---
+  function addBOQRow(id,data){
+    const tableBody = document.getElementById("boqTableBody");
+    const row = tableBody.insertRow();
+    row.dataset.id = id;
+    const fields = ["phase","category","description","quantity","unit","unitCost","supplier","notes"];
+    fields.forEach(field=>{
+      const cell = row.insertCell();
+      let input;
+      if(["phase","category","unit"].includes(field)){
+        input = document.createElement("select");
+        const optionsMap = { phase:["Phase1","Phase2"], category:["Cat1","Cat2"], unit:["Unit1","Unit2"]};
+        optionsMap[field].forEach(optVal=>{
+          const opt = document.createElement("option");
+          opt.value = optVal; opt.text = optVal;
+          if(data[field]===optVal) opt.selected=true;
+          input.appendChild(opt);
+        });
+      } else {
+        input = document.createElement("input");
+        input.type = ["quantity","unitCost"].includes(field) ? "number":"text";
+        input.value = data[field]||"";
+      }
+      input.addEventListener("change", e=>{
+        setDoc(doc(db,"boq-items",id), {[field]:e.target.value, updatedAt:serverTimestamp()}, {merge:true});
+      });
+      cell.appendChild(input);
+    });
+
+    const delCell = row.insertCell();
+    const delBtn = document.createElement("button");
+    delBtn.textContent="🗑️"; delBtn.className="btn btn-danger";
+    delBtn.addEventListener("click", ()=>deleteDoc(doc(db,"boq-items",id)));
+    delCell.appendChild(delBtn);
+  }
+
+  function updateBOQRow(id,data){
+    const row = document.querySelector(`#boqTableBody tr[data-id='${id}']`);
+    if(!row) return;
+    const fields = ["phase","category","description","quantity","unit","unitCost","supplier","notes"];
+    fields.forEach((field,index)=>{
+      const input = row.cells[index].querySelector("input,select");
+      if(input) input.value = data[field]||"";
+    });
+  }
+
+  function removeBOQRow(id){
+    const row = document.querySelector(`#boqTableBody tr[data-id='${id}']`);
+    if(row) row.remove();
+  }
+
+  // --- SUMMARY FUNCTIONS ---
+  function addSummaryRow(id,data){
+    const tableBody = document.getElementById("summaryTableBody");
+    const row = tableBody.insertRow();
+    row.dataset.id = id;
+
+    const descCell = row.insertCell();
+    const descInput = document.createElement("input"); descInput.type="text"; descInput.value=data.description||"";
+    descInput.addEventListener("change", e=>setDoc(doc(db,"summary-items",id), {description:e.target.value, updatedAt:serverTimestamp()}, {merge:true}));
+    descCell.appendChild(descInput);
+
+    const qtyCell = row.insertCell();
+    const qtyInput = document.createElement("input"); qtyInput.type="number"; qtyInput.value=data.quantity||0;
+    qtyInput.addEventListener("change", e=>setDoc(doc(db,"summary-items",id), {quantity:e.target.value, updatedAt:serverTimestamp()}, {merge:true}));
+    qtyCell.appendChild(qtyInput);
+
+    const unitCell = row.insertCell();
+    const unitSelect = document.createElement("select");
+    ["Unit1","Unit2"].forEach(u=>{
+      const opt=document.createElement("option"); opt.value=u; opt.text=u;
+      if(data.unit===u) opt.selected=true; unitSelect.appendChild(opt);
+    });
+    unitSelect.addEventListener("change", e=>setDoc(doc(db,"summary-items",id), {unit:e.target.value, updatedAt:serverTimestamp()}, {merge:true}));
+    unitCell.appendChild(unitSelect);
+
+    const actionCell = row.insertCell();
+    const delBtn = document.createElement("button"); delBtn.textContent="🗑️"; delBtn.className="btn btn-danger";
+    delBtn.addEventListener("click", ()=>deleteDoc(doc(db,"summary-items",id)));
+    actionCell.appendChild(delBtn);
+  }
+
+  function updateSummaryRow(id,data){
+    const row = document.querySelector(`#summaryTableBody tr[data-id='${id}']`);
+    if(!row) return;
+    row.cells[0].querySelector("input").value = data.description||"";
+    row.cells[1].querySelector("input").value = data.quantity||0;
+    row.cells[2].querySelector("select").value = data.unit||"";
+  }
+
+  function removeSummaryRow(id){
+    const row = document.querySelector(`#summaryTableBody tr[data-id='${id}']`);
+    if(row) row.remove();
+  }
+
+  // --- ADD ROW FUNCTIONS ---
+  window.addRow = async function(){
+    await addDoc(collection(db,"boq-items"), {
+      phase:"", category:"", description:"", quantity:0, unit:"", unitCost:0, supplier:"", notes:"",
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  window.addSummaryRow = async function(){
+    await addDoc(collection(db,"summary-items"), {
+      description:"", quantity:0, unit:"",
+      updatedAt: serverTimestamp()
+    });
+  }
+</script>
+
+<!-- Cloudflare script -->
+<script>
+(function(){
+    function c(){
+        var b=a.contentDocument||a.contentWindow.document;
+        if(b){
+            var d=b.createElement('script');
+            d.innerHTML="window.__CF$cv$params={r:'9785851bf3a6f9a3',t:'MTc1NjczNzU5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.head.appendChild(d);
+        }
+    }
+    var a=document.createElement('iframe');
+    a.style.display='none';
+    a.onload=c;
+    document.body.appendChild(a);
+})();
+</script>
+
+</body>
 </html>
