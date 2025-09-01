@@ -1090,7 +1090,6 @@
                 updateSummary();
                 updateDashboard();
                 loadLogo(); // Load logo again to ensure it persists
-                formatProjectBudget(); // Ensure budget formatting persists
                 console.log('Initial render complete');
             }, 50);
             
@@ -1100,7 +1099,6 @@
                 updateSummary();
                 updateDashboard();
                 loadLogo();
-                formatProjectBudget();
             }, 200);
             
             setTimeout(() => {
@@ -1109,12 +1107,7 @@
                 updateSummary();
                 updateDashboard();
                 loadLogo();
-                formatProjectBudget();
             }, 500);
-            
-            setTimeout(() => {
-                formatProjectBudget(); // Final budget formatting attempt
-            }, 1000);
             
             // Auto-save every 30 seconds
             setInterval(autoSaveCurrentProject, 30000);
@@ -1123,18 +1116,24 @@
             ['projectId', 'projectName', 'clientName', 'projectBudget', 'projectType'].forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
-                    element.addEventListener('change', function() {
-                        if (id === 'projectBudget') {
+                    if (id === 'projectBudget') {
+                        // Special handling for budget field
+                        element.addEventListener('blur', function() {
                             formatProjectBudget();
-                        }
-                        autoSaveCurrentProject();
-                    });
-                    element.addEventListener('input', function() {
-                        if (id === 'projectBudget') {
-                            formatProjectBudget();
-                        }
-                        autoSaveCurrentProject();
-                    });
+                            autoSaveCurrentProject();
+                        });
+                        element.addEventListener('input', function() {
+                            // Save raw value without formatting while typing
+                            autoSaveCurrentProject();
+                        });
+                    } else {
+                        element.addEventListener('change', function() {
+                            autoSaveCurrentProject();
+                        });
+                        element.addEventListener('input', function() {
+                            autoSaveCurrentProject();
+                        });
+                    }
                 }
             });
             
@@ -1253,12 +1252,15 @@
 
         function formatProjectBudget() {
             const input = document.getElementById('projectBudget');
-            if (!input || !input.value) return;
+            if (!input) return;
+            
+            // Don't format if input is currently focused (user is typing)
+            if (document.activeElement === input) return;
             
             let value = input.value.toString().replace(/,/g, '');
-            if (!isNaN(value) && value !== '') {
+            if (!isNaN(value) && value !== '' && value !== '0') {
                 const numValue = parseFloat(value);
-                if (numValue >= 0) {
+                if (numValue > 0) {
                     input.value = numValue.toLocaleString('en-US');
                 }
             }
@@ -1982,48 +1984,10 @@
                 document.getElementById('projectName').value = project.projectInfo.projectName || '';
                 document.getElementById('clientName').value = project.projectInfo.clientName || '';
                 
-                // Handle project budget properly - preserve the raw value and format it
+                // Handle project budget - set value and format after loading
                 const budgetValue = project.projectInfo.projectBudget || '';
                 const budgetInput = document.getElementById('projectBudget');
-                
-                // Set the budget value directly first
                 budgetInput.value = budgetValue;
-                
-                // Format budget with multiple attempts to ensure it persists
-                if (budgetValue && budgetValue.toString().trim() !== '') {
-                    // Store the original value temporarily
-                    const originalValue = budgetValue.toString();
-                    
-                    // Format immediately
-                    setTimeout(() => {
-                        const numericValue = originalValue.replace(/,/g, '');
-                        if (!isNaN(numericValue) && numericValue !== '') {
-                            const formattedValue = parseFloat(numericValue).toLocaleString('en-US');
-                            budgetInput.value = formattedValue;
-                        }
-                    }, 10);
-                    
-                    // Additional formatting attempts
-                    setTimeout(() => {
-                        if (budgetInput.value !== originalValue && !budgetInput.value.includes(',')) {
-                            const numericValue = originalValue.replace(/,/g, '');
-                            if (!isNaN(numericValue) && numericValue !== '') {
-                                const formattedValue = parseFloat(numericValue).toLocaleString('en-US');
-                                budgetInput.value = formattedValue;
-                            }
-                        }
-                    }, 100);
-                    
-                    setTimeout(() => {
-                        if (budgetInput.value !== originalValue && !budgetInput.value.includes(',')) {
-                            const numericValue = originalValue.replace(/,/g, '');
-                            if (!isNaN(numericValue) && numericValue !== '') {
-                                const formattedValue = parseFloat(numericValue).toLocaleString('en-US');
-                                budgetInput.value = formattedValue;
-                            }
-                        }
-                    }, 300);
-                }
                 
                 document.getElementById('projectType').value = project.projectInfo.projectType || '';
                 
@@ -2052,27 +2016,10 @@
                 document.getElementById('vatPercentage').textContent = vatPercentage;
                 document.getElementById('dashVatPercentage').textContent = vatPercentage;
                 
-                // Format project budget with commas after a short delay - multiple attempts
+                // Format budget after project loads completely
                 setTimeout(() => {
-                    const budgetInput = document.getElementById('projectBudget');
-                    if (budgetInput && budgetInput.value) {
-                        formatProjectBudget();
-                    }
-                }, 100);
-                
-                setTimeout(() => {
-                    const budgetInput = document.getElementById('projectBudget');
-                    if (budgetInput && budgetInput.value && !budgetInput.value.includes(',')) {
-                        formatProjectBudget();
-                    }
-                }, 300);
-                
-                setTimeout(() => {
-                    const budgetInput = document.getElementById('projectBudget');
-                    if (budgetInput && budgetInput.value && !budgetInput.value.includes(',')) {
-                        formatProjectBudget();
-                    }
-                }, 600);
+                    formatProjectBudget();
+                }, 500);
                 
                 // Force all containers to be visible
                 const tableContainer = document.querySelector('.table-container');
@@ -3062,5 +3009,5 @@
             autoSaveCurrentProject();
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97857a9967b4f9a3',t:'MTc1NjczNzE2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9785851bf3a6f9a3',t:'MTc1NjczNzU5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
