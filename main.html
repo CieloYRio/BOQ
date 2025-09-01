@@ -3019,11 +3019,13 @@
             autoSaveCurrentProject();
         }
     </script>
+<!-- Place this BEFORE </body> -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
   import { getFirestore, collection, doc, setDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
   import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
+  // --- FIREBASE CONFIG ---
   const firebaseConfig = {
     apiKey: "AIzaSyA7eINZE62HO7il12s0Dt_M0S5myMMc7Wc",
     authDomain: "acd-boq.firebaseapp.com",
@@ -3035,10 +3037,11 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const auth = getAuth();
+  const auth = getAuth(); // Auth instance
 
   document.addEventListener("DOMContentLoaded", () => {
 
+    // --- PROJECT INFO ---
     const projectDoc = doc(db, "projects", "project1");
     const projectFields = ["projectId","projectName","clientName","projectBudget","projectType"];
 
@@ -3054,14 +3057,17 @@
 
       projectFields.forEach(f => {
         const el = document.getElementById(f);
-        if (el) el.addEventListener("change", e => {
-          setDoc(projectDoc, { [f]: e.target.value }, { merge: true });
-        });
+        if (el) {
+          el.addEventListener("change", e => {
+            setDoc(projectDoc, { [f]: e.target.value }, { merge: true });
+          });
+        }
       });
     }
 
     loadProjectInfo();
 
+    // --- BOQ Table Realtime ---
     const boqQuery = query(collection(db,"boq-items"), orderBy("updatedAt"));
     onSnapshot(boqQuery, snapshot => {
       snapshot.docChanges().forEach(change => {
@@ -3073,6 +3079,7 @@
       });
     });
 
+    // --- SUMMARY Table Realtime ---
     const sumQuery = query(collection(db,"summary-items"), orderBy("updatedAt"));
     onSnapshot(sumQuery, snapshot => {
       snapshot.docChanges().forEach(change => {
@@ -3084,48 +3091,35 @@
       });
     });
 
-    // --- BOQ FUNCTIONS ---
-    const optionsMap = {
-      phase: ["Phase1","Phase2"],
-      category: ["Cat1","Cat2"],
-      unit: ["Unit1","Unit2"]
-    };
-
+    // --- BOQ FUNCTIONS (RESTORED WORKING LOGIC) ---
     function addBOQRow(id,data){
       const tableBody = document.getElementById("boqTableBody");
-      if(!tableBody) return;
+      if (!tableBody) return;
       const row = tableBody.insertRow();
       row.dataset.id = id;
-
       const fields = ["phase","category","description","quantity","unit","unitCost","supplier","notes"];
-      fields.forEach(field => {
+      fields.forEach(field=>{
         const cell = row.insertCell();
         let input;
-
-        if(optionsMap[field]){
+        if(["phase","category","unit"].includes(field)){
           input = document.createElement("select");
+          const optionsMap = { phase:["Phase1","Phase2"], category:["Cat1","Cat2"], unit:["Unit1","Unit2"]};
           optionsMap[field].forEach(optVal=>{
             const opt = document.createElement("option");
-            opt.value = optVal;
-            opt.text = optVal;
-            if(data[field] === optVal) opt.selected = true;
+            opt.value = optVal; opt.text = optVal;
+            if(data[field]===optVal) opt.selected=true;
             input.appendChild(opt);
           });
-          // If Firestore value is missing, select first option
-          if(!data[field]) input.selectedIndex = 0;
         } else {
           input = document.createElement("input");
-          input.type = ["quantity","unitCost"].includes(field) ? "number" : "text";
-          input.value = data[field] || "";
+          input.type = ["quantity","unitCost"].includes(field) ? "number":"text";
+          input.value = data[field]||"";
         }
-
-        input.addEventListener("change", e => {
-          setDoc(doc(db,"boq-items",id), {[field]: e.target.value, updatedAt: serverTimestamp()}, {merge:true});
+        input.addEventListener("change", e=>{
+          setDoc(doc(db,"boq-items",id), {[field]:e.target.value, updatedAt:serverTimestamp()}, {merge:true});
         });
-
         cell.appendChild(input);
       });
-
       const delCell = row.insertCell();
       const delBtn = document.createElement("button");
       delBtn.textContent="🗑️"; delBtn.className="btn btn-danger";
@@ -3139,10 +3133,7 @@
       const fields = ["phase","category","description","quantity","unit","unitCost","supplier","notes"];
       fields.forEach((field,index)=>{
         const input = row.cells[index].querySelector("input,select");
-        if(input){
-          if(optionsMap[field] && !optionsMap[field].includes(data[field])) input.selectedIndex = 0;
-          else input.value = data[field] || "";
-        }
+        if(input) input.value = data[field]||"";
       });
     }
 
@@ -3174,7 +3165,6 @@
         const opt=document.createElement("option"); opt.value=u; opt.text=u;
         if(data.unit===u) opt.selected=true; unitSelect.appendChild(opt);
       });
-      if(!data.unit) unitSelect.selectedIndex = 0;
       unitSelect.addEventListener("change", e=>setDoc(doc(db,"summary-items",id), {unit:e.target.value, updatedAt:serverTimestamp()}, {merge:true}));
       unitCell.appendChild(unitSelect);
 
@@ -3189,9 +3179,7 @@
       if(!row) return;
       if(row.cells[0].querySelector("input")) row.cells[0].querySelector("input").value = data.description||"";
       if(row.cells[1].querySelector("input")) row.cells[1].querySelector("input").value = data.quantity||0;
-      if(row.cells[2].querySelector("select")){
-        row.cells[2].querySelector("select").value = data.unit || row.cells[2].querySelector("select").options[0].value;
-      }
+      if(row.cells[2].querySelector("select")) row.cells[2].querySelector("select").value = data.unit||"";
     }
 
     function removeSummaryRow(id){
@@ -3202,14 +3190,14 @@
     // --- ADD ROW FUNCTIONS ---
     window.addRow = async function(){
       await addDoc(collection(db,"boq-items"), {
-        phase:"Phase1", category:"Cat1", description:"", quantity:0, unit:"Unit1", unitCost:0, supplier:"", notes:"",
+        phase:"", category:"", description:"", quantity:0, unit:"", unitCost:0, supplier:"", notes:"",
         updatedAt: serverTimestamp()
       });
     }
 
     window.addSummaryRow = async function(){
       await addDoc(collection(db,"summary-items"), {
-        description:"", quantity:0, unit:"Unit1",
+        description:"", quantity:0, unit:"",
         updatedAt: serverTimestamp()
       });
     }
