@@ -1,139 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Welcome to ArtiCentro BOQ</title>
-<style>
-    /* Background & typography */
+  <meta charset="UTF-8">
+  <title>Welcome to ArtiCentro Designs BOQ</title>
+  <style>
     body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: linear-gradient(to bottom right, #d6e9c6, #f4f6f4); /* light avocado gradient */
-        color: #333;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #e0f0d8, #f0f8ef); /* light avocado gradient */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
-
     .login-container {
-        background: #fff;
-        border-radius: 10px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.2);
-        padding: 40px;
-        width: 350px;
-        text-align: center;
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 360px;
     }
-
     h1 {
-        margin-bottom: 20px;
-        color: #3f704d; /* avocado green */
+      color: #4b6b4b; /* avocado green accent */
+      margin-bottom: 24px;
     }
-
     input[type="email"], input[type="password"] {
-        width: 100%;
-        padding: 10px;
-        margin: 10px 0;
-        border-radius: 5px;
-        border: 1px solid #ccc;
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
     }
-
     button {
-        background-color: #3f704d; /* avocado green */
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        margin-top: 10px;
-        border-radius: 5px;
-        cursor: pointer;
-        width: 100%;
+      background-color: #4b6b4b; /* avocado green */
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      margin-top: 12px;
+      cursor: pointer;
+      border-radius: 8px;
+      width: 100%;
+      font-size: 16px;
     }
-
     button:hover {
-        background-color: #2e5034;
+      background-color: #3a523a;
     }
-
-    .register-link {
-        margin-top: 15px;
-        display: block;
-        font-size: 0.9em;
-        color: #666;
-        text-decoration: none;
+    .message {
+      margin-top: 16px;
+      color: red;
+      font-size: 14px;
     }
-
-    .register-link:hover {
-        text-decoration: underline;
+    .success {
+      color: green;
     }
-
-    .error {
-        color: red;
-        font-size: 0.9em;
-        margin-top: 5px;
-    }
-</style>
+  </style>
 </head>
 <body>
 
 <div class="login-container">
-    <h1>Welcome to ArtiCentro Designs BOQ</h1>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <button onclick="register()">Register</button>
-    <div class="error" id="error-msg"></div>
+  <h1>Welcome to ArtiCentro Designs BOQ</h1>
+  <input type="email" id="email" placeholder="Enter your email" required />
+  <input type="password" id="password" placeholder="Enter your password" required />
+  <button id="loginBtn">Log In</button>
+  <button id="registerBtn">Register</button>
+  <div id="message" class="message"></div>
 </div>
 
-<!-- Firebase -->
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 
 <script>
-    // 1. Firebase config (replace with your own)
-    const firebaseConfig = {
-  apiKey: "AIzaSyA7eINZE62HO7il12s0Dt_M0S5myMMc7Wc",
-  authDomain: "acd-boq.firebaseapp.com",
-  projectId: "acd-boq",
-  storageBucket: "acd-boq.firebasestorage.app",
-  messagingSenderId: "339472839282",
-  appId: "1:339472839282:web:21cee5c8c7d7349087c8eb"
-};
-    firebase.initializeApp(firebaseConfig);
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyA7eINZE62HO7il12s0Dt_M0S5myMMc7Wc",
+    authDomain: "acd-boq.firebaseapp.com",
+    projectId: "acd-boq",
+    storageBucket: "acd-boq.firebasestorage.app",
+    messagingSenderId: "339472839282",
+    appId: "1:339472839282:web:21cee5c8c7d7349087c8eb"
+  };
 
-    const auth = firebase.auth();
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
 
-    // 2. Login function
-    function login() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const errorMsg = document.getElementById('error-msg');
-        errorMsg.textContent = "";
+  const loginBtn = document.getElementById('loginBtn');
+  const registerBtn = document.getElementById('registerBtn');
+  const messageDiv = document.getElementById('message');
 
-        auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            // Redirect to main BOQ page
-            window.location.href = "index.html";
-        })
-        .catch((error) => {
-            errorMsg.textContent = error.message;
-        });
+  loginBtn.addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    messageDiv.textContent = '';
+    
+    if (!email || !password) {
+      messageDiv.textContent = 'Please enter email and password.';
+      return;
     }
 
-    // 3. Register function (self-register)
-    function register() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const errorMsg = document.getElementById('error-msg');
-        errorMsg.textContent = "";
-
-        auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            alert("Account created successfully! You can now log in.");
-        })
-        .catch((error) => {
-            errorMsg.textContent = error.message;
-        });
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+      messageDiv.textContent = 'Login successful!';
+      messageDiv.classList.add('success');
+      // Redirect to your BOQ main page
+      window.location.href = 'BOQ.html';
+    } catch (error) {
+      messageDiv.textContent = error.message;
+      messageDiv.classList.remove('success');
     }
+  });
+
+  registerBtn.addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    messageDiv.textContent = '';
+
+    if (!email || !password) {
+      messageDiv.textContent = 'Please enter email and password.';
+      return;
+    }
+
+    try {
+      await auth.createUserWithEmailAndPassword(email, password);
+      messageDiv.textContent = 'Registered successfully! You can now log in.';
+      messageDiv.classList.add('success');
+    } catch (error) {
+      messageDiv.textContent = error.message;
+      messageDiv.classList.remove('success');
+    }
+  });
 </script>
 
 </body>
