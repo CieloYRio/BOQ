@@ -1150,8 +1150,11 @@
                 autoSaveCurrentProject();
             });
             
-            // Handle page load
+            // Handle page load and refresh
             window.addEventListener('load', function() {
+                // Clear session storage on fresh load
+                sessionStorage.removeItem('logo_loaded');
+                
                 setTimeout(() => {
                     loadLogo();
                     initializeTabs();
@@ -1169,6 +1172,16 @@
                 setTimeout(() => {
                     loadLogo();
                 }, 1000);
+            });
+            
+            // Handle page refresh specifically
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted) {
+                    // Page was loaded from cache (back/forward navigation)
+                    sessionStorage.removeItem('logo_loaded');
+                    loadLogo();
+                    loadAllProjects();
+                }
             });
         });
 
@@ -1630,51 +1643,80 @@
         }
 
         function loadLogo() {
-            const savedLogo = localStorage.getItem('articentro_logo');
-            if (savedLogo) {
-                try {
-                    const logoContainer = document.querySelector('.logo');
-                    const logoText = document.getElementById('logoText');
-                    
-                    if (logoContainer && logoText) {
-                        // Remove existing image if any
-                        const existingImg = logoContainer.querySelector('img');
-                        if (existingImg) {
-                            existingImg.remove();
+            // Multiple attempts to load logo with different timing
+            const attemptLoadLogo = (attempt = 1) => {
+                const savedLogo = localStorage.getItem('articentro_logo');
+                if (savedLogo) {
+                    try {
+                        const logoContainer = document.querySelector('.logo');
+                        const logoText = document.getElementById('logoText');
+                        
+                        if (logoContainer && logoText) {
+                            // Remove existing image if any
+                            const existingImg = logoContainer.querySelector('img');
+                            if (existingImg) {
+                                existingImg.remove();
+                            }
+                            
+                            // Create new image element with better error handling
+                            const logoImg = document.createElement('img');
+                            logoImg.style.cssText = `
+                                width: 100%;
+                                height: 100%;
+                                object-fit: contain;
+                                border-radius: 12px;
+                                background: rgba(255, 255, 255, 0.9);
+                                position: absolute;
+                                top: 0;
+                                left: 0;
+                                z-index: 2;
+                            `;
+                            
+                            logoImg.onload = function() {
+                                logoText.style.display = 'none';
+                                console.log('Logo loaded successfully on attempt', attempt);
+                                // Store success flag
+                                sessionStorage.setItem('logo_loaded', 'true');
+                            };
+                            
+                            logoImg.onerror = function() {
+                                console.log('Logo failed to load on attempt', attempt);
+                                logoText.style.display = 'block';
+                                logoImg.remove();
+                                if (attempt >= 3) {
+                                    localStorage.removeItem('articentro_logo');
+                                    console.log('Logo removed after 3 failed attempts');
+                                }
+                            };
+                            
+                            logoImg.src = savedLogo;
+                            logoContainer.appendChild(logoImg);
                         }
-                        
-                        // Create new image element
-                        const logoImg = document.createElement('img');
-                        logoImg.style.width = '100%';
-                        logoImg.style.height = '100%';
-                        logoImg.style.objectFit = 'contain';
-                        logoImg.style.borderRadius = '12px';
-                        logoImg.style.background = 'rgba(255, 255, 255, 0.9)';
-                        logoImg.style.position = 'absolute';
-                        logoImg.style.top = '0';
-                        logoImg.style.left = '0';
-                        logoImg.style.zIndex = '2';
-                        
-                        logoImg.onload = function() {
-                            logoText.style.display = 'none';
-                            console.log('Logo loaded successfully');
-                        };
-                        
-                        logoImg.onerror = function() {
-                            logoText.style.display = 'block';
-                            logoImg.remove();
+                    } catch (error) {
+                        console.error('Error loading logo on attempt', attempt, ':', error);
+                        if (attempt >= 3) {
                             localStorage.removeItem('articentro_logo');
-                            console.log('Logo failed to load, removed from storage');
-                        };
-                        
-                        logoImg.src = savedLogo;
-                        logoContainer.appendChild(logoImg);
+                        }
                     }
-                } catch (error) {
-                    console.error('Error loading logo:', error);
-                    localStorage.removeItem('articentro_logo');
                 }
-            }
+            };
+
+            // Try loading immediately
+            attemptLoadLogo(1);
+            
+            // Try again after 100ms if not loaded
+            setTimeout(() => {
+                if (!sessionStorage.getItem('logo_loaded')) {
+                    attemptLoadLogo(2);
+                }
+            }, 100);
+            
+            // Final attempt after 500ms
+            setTimeout(() => {
+                if (!sessionStorage.getItem('logo_loaded')) {
+                    attemptLoadLogo(3);
+                }
+            }, 500);
         }
 
         function exportToExcel() {
@@ -1933,9 +1975,20 @@
                 document.getElementById('projectName').value = project.projectInfo.projectName || '';
                 document.getElementById('clientName').value = project.projectInfo.clientName || '';
                 
-                // Handle project budget properly - preserve the raw value
+                // Handle project budget properly - preserve the raw value and format it
                 const budgetValue = project.projectInfo.projectBudget || '';
-                document.getElementById('projectBudget').value = budgetValue;
+                const budgetInput = document.getElementById('projectBudget');
+                budgetInput.value = budgetValue;
+                
+                // Format budget immediately if it has a value
+                if (budgetValue) {
+                    // Remove commas first, then reformat
+                    const numericValue = budgetValue.toString().replace(/,/g, '');
+                    if (!isNaN(numericValue) && numericValue !== '') {
+                        const formattedValue = parseFloat(numericValue).toLocaleString('en-US');
+                        budgetInput.value = formattedValue;
+                    }
+                }
                 
                 document.getElementById('projectType').value = project.projectInfo.projectType || '';
                 
@@ -2841,15 +2894,16 @@
                 }
             });
             
-            // Clear existing summary data and reset counter
+            // Clear existing summary data and reset counter properly
             summaryData = [];
             summaryItemCounter = 1;
             
-            // Create summary rows from categories
+            // Create summary rows from categories with proper item numbering
+            let itemNumber = 1;
             Object.entries(categoryTotals).forEach(([category, total]) => {
                 const row = {
                     id: Date.now() + Math.random(),
-                    itemNo: summaryItemCounter,
+                    itemNo: itemNumber,
                     description: category,
                     quantity: 1,
                     unit: 'lot',
@@ -2859,8 +2913,11 @@
                 };
                 calculateSummaryRow(row);
                 summaryData.push(row);
-                summaryItemCounter++;
+                itemNumber++;
             });
+            
+            // Update the counter for future additions
+            summaryItemCounter = itemNumber;
             
             renderSummaryTable();
             updateSummaryTotal();
@@ -2956,5 +3013,5 @@
             autoSaveCurrentProject();
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97844ff046e0f9a3',t:'MTc1NjcyNDkzMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97846c3c364ff9a3',t:'MTc1NjcyNjA5Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
