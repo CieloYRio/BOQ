@@ -3020,6 +3020,7 @@
         }
     </script>
 <!-- Place this BEFORE </body> -->
+<!-- Place this BEFORE </body> -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
   import { getFirestore, collection, doc, setDoc, onSnapshot, addDoc, serverTimestamp, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
@@ -3040,16 +3041,6 @@
   const auth = getAuth();
 
   document.addEventListener("DOMContentLoaded", () => {
-
-    // --- LOGOUT ---
-    const logoutBtn = document.getElementById('logoutBtn');
-    if(logoutBtn){
-      logoutBtn.addEventListener('click', () => {
-        signOut(auth).then(() => {
-          window.location.href = "index.html"; // Redirect to welcome page
-        }).catch(error => console.error("Logout error:", error));
-      });
-    }
 
     // --- PROJECT INFO ---
     const projectDoc = doc(db, "projects", "project1");
@@ -3074,9 +3065,10 @@
         }
       });
     }
+
     loadProjectInfo();
 
-    // --- BOQ TABLE REALTIME ---
+    // --- BOQ Table Realtime ---
     const boqQuery = query(collection(db,"boq-items"), orderBy("updatedAt"));
     onSnapshot(boqQuery, snapshot => {
       snapshot.docChanges().forEach(change => {
@@ -3088,7 +3080,7 @@
       });
     });
 
-    // --- SUMMARY TABLE REALTIME ---
+    // --- SUMMARY Table Realtime ---
     const sumQuery = query(collection(db,"summary-items"), orderBy("updatedAt"));
     onSnapshot(sumQuery, snapshot => {
       snapshot.docChanges().forEach(change => {
@@ -3100,19 +3092,21 @@
       });
     });
 
-    // --- BOQ ROW FUNCTIONS ---
+    // --- BOQ FUNCTIONS ---
+    const optionsMap = { phase:["Phase1","Phase2"], category:["Cat1","Cat2"], unit:["Unit1","Unit2"] };
+
     function addBOQRow(id,data){
       const tableBody = document.getElementById("boqTableBody");
       if (!tableBody) return;
       const row = tableBody.insertRow();
       row.dataset.id = id;
+
       const fields = ["phase","category","description","quantity","unit","unitCost","supplier","notes"];
       fields.forEach(field=>{
         const cell = row.insertCell();
         let input;
-        if(["phase","category","unit"].includes(field)){
+        if(optionsMap[field]){
           input = document.createElement("select");
-          const optionsMap = { phase:["Phase1","Phase2"], category:["Cat1","Cat2"], unit:["Unit1","Unit2"]};
           optionsMap[field].forEach(optVal=>{
             const opt = document.createElement("option");
             opt.value = optVal; opt.text = optVal;
@@ -3124,11 +3118,14 @@
           input.type = ["quantity","unitCost"].includes(field) ? "number":"text";
           input.value = data[field]||"";
         }
+
         input.addEventListener("change", e=>{
           setDoc(doc(db,"boq-items",id), {[field]:e.target.value, updatedAt:serverTimestamp()}, {merge:true});
         });
+
         cell.appendChild(input);
       });
+
       const delCell = row.insertCell();
       const delBtn = document.createElement("button");
       delBtn.textContent="🗑️"; delBtn.className="btn btn-danger";
@@ -3142,7 +3139,7 @@
       const fields = ["phase","category","description","quantity","unit","unitCost","supplier","notes"];
       fields.forEach((field,index)=>{
         const input = row.cells[index].querySelector("input,select");
-        if(input) input.value = data[field]||"";
+        if(input) input.value = data[field] || "";
       });
     }
 
@@ -3151,7 +3148,7 @@
       if(row) row.remove();
     }
 
-    // --- SUMMARY ROW FUNCTIONS ---
+    // --- SUMMARY FUNCTIONS ---
     function addSummaryRow(id,data){
       const tableBody = document.getElementById("summaryTableBody");
       if(!tableBody) return;
@@ -3203,6 +3200,7 @@
         updatedAt: serverTimestamp()
       });
     }
+
     window.addSummaryRow = async function(){
       await addDoc(collection(db,"summary-items"), {
         description:"", quantity:0, unit:"",
@@ -3229,6 +3227,19 @@
     a.onload=c;
     document.body.appendChild(a);
 })();
+</script>
+
+<!-- LOGOUT BUTTON SCRIPT -->
+<script type="module">
+  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+  const auth = getAuth();
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    signOut(auth).then(() => {
+      window.location.href = "index.html"; // Redirect to welcome page
+    }).catch((error) => {
+      console.error("Logout error:", error);
+    });
+  });
 </script>
 </body>
 </html>
