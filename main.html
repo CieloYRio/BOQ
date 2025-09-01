@@ -3092,52 +3092,90 @@
     });
 
     // --- BOQ FUNCTIONS (RESTORED WORKING LOGIC) ---
-    function addBOQRow(id,data){
+    const phases = ["Preliminary Works", "Structural Works", "Interior Works", "Exterior Works", "Finishing Works", "Other Areas"];
+    const categories = ["Materials", "Labor", "Mobilization & Transport", "Utilities & Contingencies", "Design & Admin", "Misc."];
+    const units = ["piece", "sqm", "meter", "cu.m", "gallon", "bag", "set", "lot", "linear meter", "day/s"];
+    const descriptions = ["Ceramic Tiles", "Vinyl Flooring", "Laminate Flooring", "Hardwood Flooring", "Marble Tiles", "Latex Paint", "Primer", "Skilled Carpenter", "Mason/Bricklayer", "Electrician", "Plumber", "Painter"];
+
+    function addBOQRow(id, data) {
       const tableBody = document.getElementById("boqTableBody");
       if (!tableBody) return;
       const row = tableBody.insertRow();
       row.dataset.id = id;
+
       const fields = ["phase","category","description","quantity","unit","unitCost","supplier","notes"];
-      fields.forEach(field=>{
+      fields.forEach(field => {
         const cell = row.insertCell();
         let input;
-        if(["phase","category","unit"].includes(field)){
+
+        if (field === "phase") {
           input = document.createElement("select");
-          const optionsMap = { phase:["Phase1","Phase2"], category:["Cat1","Cat2"], unit:["Unit1","Unit2"]};
-          optionsMap[field].forEach(optVal=>{
+          phases.forEach(p => {
             const opt = document.createElement("option");
-            opt.value = optVal; opt.text = optVal;
-            if(data[field]===optVal) opt.selected=true;
+            opt.value = p;
+            opt.text = p;
+            if (data[field] === p) opt.selected = true;
+            input.appendChild(opt);
+          });
+        } else if (field === "category") {
+          input = document.createElement("select");
+          categories.forEach(c => {
+            const opt = document.createElement("option");
+            opt.value = c;
+            opt.text = c;
+            if (data[field] === c) opt.selected = true;
+            input.appendChild(opt);
+          });
+        } else if (field === "description") {
+          input = document.createElement("select");
+          descriptions.forEach(d => {
+            const opt = document.createElement("option");
+            opt.value = d;
+            opt.text = d;
+            if (data[field] === d) opt.selected = true;
+            input.appendChild(opt);
+          });
+        } else if (field === "unit") {
+          input = document.createElement("select");
+          units.forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u;
+            opt.text = u;
+            if (data[field] === u) opt.selected = true;
             input.appendChild(opt);
           });
         } else {
           input = document.createElement("input");
-          input.type = ["quantity","unitCost"].includes(field) ? "number":"text";
-          input.value = data[field]||"";
+          input.type = ["quantity","unitCost"].includes(field) ? "number" : "text";
+          input.value = data[field] || "";
         }
-        input.addEventListener("change", e=>{
-          setDoc(doc(db,"boq-items",id), {[field]:e.target.value, updatedAt:serverTimestamp()}, {merge:true});
+
+        input.addEventListener("change", e => {
+          setDoc(doc(db,"boq-items",id), {[field]: e.target.value, updatedAt: serverTimestamp()}, {merge:true});
         });
+
         cell.appendChild(input);
       });
+
       const delCell = row.insertCell();
       const delBtn = document.createElement("button");
-      delBtn.textContent="🗑️"; delBtn.className="btn btn-danger";
-      delBtn.addEventListener("click", ()=>deleteDoc(doc(db,"boq-items",id)));
+      delBtn.textContent = "🗑️";
+      delBtn.className = "btn btn-danger";
+      delBtn.addEventListener("click", () => deleteDoc(doc(db,"boq-items",id)));
       delCell.appendChild(delBtn);
     }
 
-    function updateBOQRow(id,data){
+    function updateBOQRow(id, data) {
       const row = document.querySelector(`#boqTableBody tr[data-id='${id}']`);
-      if(!row) return;
+      if (!row) return;
       const fields = ["phase","category","description","quantity","unit","unitCost","supplier","notes"];
-      fields.forEach((field,index)=>{
+      fields.forEach((field,index) => {
         const input = row.cells[index].querySelector("input,select");
-        if(input) input.value = data[field]||"";
+        if(input) input.value = data[field] || "";
       });
     }
 
-    function removeBOQRow(id){
+    function removeBOQRow(id) {
       const row = document.querySelector(`#boqTableBody tr[data-id='${id}']`);
       if(row) row.remove();
     }
@@ -3161,7 +3199,7 @@
 
       const unitCell = row.insertCell();
       const unitSelect = document.createElement("select");
-      ["Unit1","Unit2"].forEach(u=>{
+      units.forEach(u=>{
         const opt=document.createElement("option"); opt.value=u; opt.text=u;
         if(data.unit===u) opt.selected=true; unitSelect.appendChild(opt);
       });
