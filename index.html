@@ -1090,6 +1090,7 @@
                 updateSummary();
                 updateDashboard();
                 loadLogo(); // Load logo again to ensure it persists
+                formatProjectBudget(); // Ensure budget formatting persists
                 console.log('Initial render complete');
             }, 50);
             
@@ -1099,6 +1100,7 @@
                 updateSummary();
                 updateDashboard();
                 loadLogo();
+                formatProjectBudget();
             }, 200);
             
             setTimeout(() => {
@@ -1107,7 +1109,12 @@
                 updateSummary();
                 updateDashboard();
                 loadLogo();
+                formatProjectBudget();
             }, 500);
+            
+            setTimeout(() => {
+                formatProjectBudget(); // Final budget formatting attempt
+            }, 1000);
             
             // Auto-save every 30 seconds
             setInterval(autoSaveCurrentProject, 30000);
@@ -1978,16 +1985,44 @@
                 // Handle project budget properly - preserve the raw value and format it
                 const budgetValue = project.projectInfo.projectBudget || '';
                 const budgetInput = document.getElementById('projectBudget');
+                
+                // Set the budget value directly first
                 budgetInput.value = budgetValue;
                 
-                // Format budget immediately if it has a value
-                if (budgetValue) {
-                    // Remove commas first, then reformat
-                    const numericValue = budgetValue.toString().replace(/,/g, '');
-                    if (!isNaN(numericValue) && numericValue !== '') {
-                        const formattedValue = parseFloat(numericValue).toLocaleString('en-US');
-                        budgetInput.value = formattedValue;
-                    }
+                // Format budget with multiple attempts to ensure it persists
+                if (budgetValue && budgetValue.toString().trim() !== '') {
+                    // Store the original value temporarily
+                    const originalValue = budgetValue.toString();
+                    
+                    // Format immediately
+                    setTimeout(() => {
+                        const numericValue = originalValue.replace(/,/g, '');
+                        if (!isNaN(numericValue) && numericValue !== '') {
+                            const formattedValue = parseFloat(numericValue).toLocaleString('en-US');
+                            budgetInput.value = formattedValue;
+                        }
+                    }, 10);
+                    
+                    // Additional formatting attempts
+                    setTimeout(() => {
+                        if (budgetInput.value !== originalValue && !budgetInput.value.includes(',')) {
+                            const numericValue = originalValue.replace(/,/g, '');
+                            if (!isNaN(numericValue) && numericValue !== '') {
+                                const formattedValue = parseFloat(numericValue).toLocaleString('en-US');
+                                budgetInput.value = formattedValue;
+                            }
+                        }
+                    }, 100);
+                    
+                    setTimeout(() => {
+                        if (budgetInput.value !== originalValue && !budgetInput.value.includes(',')) {
+                            const numericValue = originalValue.replace(/,/g, '');
+                            if (!isNaN(numericValue) && numericValue !== '') {
+                                const formattedValue = parseFloat(numericValue).toLocaleString('en-US');
+                                budgetInput.value = formattedValue;
+                            }
+                        }
+                    }, 300);
                 }
                 
                 document.getElementById('projectType').value = project.projectInfo.projectType || '';
@@ -2017,13 +2052,27 @@
                 document.getElementById('vatPercentage').textContent = vatPercentage;
                 document.getElementById('dashVatPercentage').textContent = vatPercentage;
                 
-                // Format project budget with commas after a short delay
+                // Format project budget with commas after a short delay - multiple attempts
                 setTimeout(() => {
                     const budgetInput = document.getElementById('projectBudget');
                     if (budgetInput && budgetInput.value) {
                         formatProjectBudget();
                     }
                 }, 100);
+                
+                setTimeout(() => {
+                    const budgetInput = document.getElementById('projectBudget');
+                    if (budgetInput && budgetInput.value && !budgetInput.value.includes(',')) {
+                        formatProjectBudget();
+                    }
+                }, 300);
+                
+                setTimeout(() => {
+                    const budgetInput = document.getElementById('projectBudget');
+                    if (budgetInput && budgetInput.value && !budgetInput.value.includes(',')) {
+                        formatProjectBudget();
+                    }
+                }, 600);
                 
                 // Force all containers to be visible
                 const tableContainer = document.querySelector('.table-container');
@@ -3013,5 +3062,5 @@
             autoSaveCurrentProject();
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97846c3c364ff9a3',t:'MTc1NjcyNjA5Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97857a9967b4f9a3',t:'MTc1NjczNzE2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
