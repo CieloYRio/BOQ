@@ -1160,6 +1160,15 @@
                     updateSummary();
                     updateDashboard();
                 }, 100);
+                
+                // Additional logo loading attempts
+                setTimeout(() => {
+                    loadLogo();
+                }, 500);
+                
+                setTimeout(() => {
+                    loadLogo();
+                }, 1000);
             });
         });
 
@@ -1628,38 +1637,38 @@
                     const logoText = document.getElementById('logoText');
                     
                     if (logoContainer && logoText) {
-                        let logoImg = logoContainer.querySelector('img');
-                        if (!logoImg) {
-                            logoImg = document.createElement('img');
-                            logoImg.style.width = '100%';
-                            logoImg.style.height = '100%';
-                            logoImg.style.objectFit = 'contain';
-                            logoImg.style.borderRadius = '12px';
-                            logoImg.style.background = 'rgba(255, 255, 255, 0.9)';
-                            logoImg.style.position = 'absolute';
-                            logoImg.style.top = '0';
-                            logoImg.style.left = '0';
-                            logoImg.style.zIndex = '2';
-                            logoContainer.appendChild(logoImg);
+                        // Remove existing image if any
+                        const existingImg = logoContainer.querySelector('img');
+                        if (existingImg) {
+                            existingImg.remove();
                         }
                         
-                        logoImg.src = savedLogo;
+                        // Create new image element
+                        const logoImg = document.createElement('img');
+                        logoImg.style.width = '100%';
+                        logoImg.style.height = '100%';
+                        logoImg.style.objectFit = 'contain';
+                        logoImg.style.borderRadius = '12px';
+                        logoImg.style.background = 'rgba(255, 255, 255, 0.9)';
+                        logoImg.style.position = 'absolute';
+                        logoImg.style.top = '0';
+                        logoImg.style.left = '0';
+                        logoImg.style.zIndex = '2';
+                        
                         logoImg.onload = function() {
-                            if (logoText) {
-                                logoText.style.display = 'none';
-                            }
+                            logoText.style.display = 'none';
                             console.log('Logo loaded successfully');
                         };
+                        
                         logoImg.onerror = function() {
-                            if (logoText) {
-                                logoText.style.display = 'block';
-                            }
-                            if (logoImg && logoImg.parentNode) {
-                                logoImg.parentNode.removeChild(logoImg);
-                            }
+                            logoText.style.display = 'block';
+                            logoImg.remove();
                             localStorage.removeItem('articentro_logo');
                             console.log('Logo failed to load, removed from storage');
                         };
+                        
+                        logoImg.src = savedLogo;
+                        logoContainer.appendChild(logoImg);
                     }
                 } catch (error) {
                     console.error('Error loading logo:', error);
@@ -1919,11 +1928,15 @@
             if (project) {
                 currentProjectId = projectId;
                 
-                // Load project info
+                // Load project info with proper budget handling
                 document.getElementById('projectId').value = project.projectInfo.projectId || '';
                 document.getElementById('projectName').value = project.projectInfo.projectName || '';
                 document.getElementById('clientName').value = project.projectInfo.clientName || '';
-                document.getElementById('projectBudget').value = project.projectInfo.projectBudget || '';
+                
+                // Handle project budget properly - preserve the raw value
+                const budgetValue = project.projectInfo.projectBudget || '';
+                document.getElementById('projectBudget').value = budgetValue;
+                
                 document.getElementById('projectType').value = project.projectInfo.projectType || '';
                 
                 // Load project data - ensure fresh data
@@ -1951,12 +1964,13 @@
                 document.getElementById('vatPercentage').textContent = vatPercentage;
                 document.getElementById('dashVatPercentage').textContent = vatPercentage;
                 
-                // Format project budget with commas - ensure value exists first
+                // Format project budget with commas after a short delay
                 setTimeout(() => {
-                    if (document.getElementById('projectBudget').value) {
+                    const budgetInput = document.getElementById('projectBudget');
+                    if (budgetInput && budgetInput.value) {
                         formatProjectBudget();
                     }
-                }, 50);
+                }, 100);
                 
                 // Force all containers to be visible
                 const tableContainer = document.querySelector('.table-container');
@@ -2696,7 +2710,7 @@
         function addSummaryRow() {
             const row = {
                 id: Date.now(),
-                itemNo: summaryItemCounter++,
+                itemNo: summaryItemCounter,
                 description: '',
                 quantity: 0,
                 unit: '',
@@ -2706,6 +2720,7 @@
             };
             
             summaryData.push(row);
+            summaryItemCounter++;
             renderSummaryTable();
             updateSummaryTotal();
             autoSaveCurrentProject();
@@ -2721,8 +2736,9 @@
         function duplicateSummaryRow(id) {
             const originalRow = summaryData.find(row => row.id === id);
             if (originalRow) {
-                const newRow = { ...originalRow, id: Date.now(), itemNo: summaryItemCounter++ };
+                const newRow = { ...originalRow, id: Date.now(), itemNo: summaryItemCounter };
                 summaryData.push(newRow);
+                summaryItemCounter++;
                 renderSummaryTable();
                 updateSummaryTotal();
                 autoSaveCurrentProject();
@@ -2825,7 +2841,7 @@
                 }
             });
             
-            // Clear existing summary data
+            // Clear existing summary data and reset counter
             summaryData = [];
             summaryItemCounter = 1;
             
@@ -2833,7 +2849,7 @@
             Object.entries(categoryTotals).forEach(([category, total]) => {
                 const row = {
                     id: Date.now() + Math.random(),
-                    itemNo: summaryItemCounter++,
+                    itemNo: summaryItemCounter,
                     description: category,
                     quantity: 1,
                     unit: 'lot',
@@ -2843,6 +2859,7 @@
                 };
                 calculateSummaryRow(row);
                 summaryData.push(row);
+                summaryItemCounter++;
             });
             
             renderSummaryTable();
@@ -2939,5 +2956,5 @@
             autoSaveCurrentProject();
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'976f7f71b474babe',t:'MTc1NjUwNjY3OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97844ff046e0f9a3',t:'MTc1NjcyNDkzMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
