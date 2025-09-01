@@ -3037,9 +3037,19 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const auth = getAuth(); // Auth instance
+  const auth = getAuth();
 
   document.addEventListener("DOMContentLoaded", () => {
+
+    // --- LOGOUT ---
+    const logoutBtn = document.getElementById('logoutBtn');
+    if(logoutBtn){
+      logoutBtn.addEventListener('click', () => {
+        signOut(auth).then(() => {
+          window.location.href = "index.html"; // Redirect to welcome page
+        }).catch(error => console.error("Logout error:", error));
+      });
+    }
 
     // --- PROJECT INFO ---
     const projectDoc = doc(db, "projects", "project1");
@@ -3064,10 +3074,9 @@
         }
       });
     }
-
     loadProjectInfo();
 
-    // --- BOQ Table Realtime ---
+    // --- BOQ TABLE REALTIME ---
     const boqQuery = query(collection(db,"boq-items"), orderBy("updatedAt"));
     onSnapshot(boqQuery, snapshot => {
       snapshot.docChanges().forEach(change => {
@@ -3079,7 +3088,7 @@
       });
     });
 
-    // --- SUMMARY Table Realtime ---
+    // --- SUMMARY TABLE REALTIME ---
     const sumQuery = query(collection(db,"summary-items"), orderBy("updatedAt"));
     onSnapshot(sumQuery, snapshot => {
       snapshot.docChanges().forEach(change => {
@@ -3091,7 +3100,7 @@
       });
     });
 
-    // --- BOQ FUNCTIONS ---
+    // --- BOQ ROW FUNCTIONS ---
     function addBOQRow(id,data){
       const tableBody = document.getElementById("boqTableBody");
       if (!tableBody) return;
@@ -3142,7 +3151,7 @@
       if(row) row.remove();
     }
 
-    // --- SUMMARY FUNCTIONS ---
+    // --- SUMMARY ROW FUNCTIONS ---
     function addSummaryRow(id,data){
       const tableBody = document.getElementById("summaryTableBody");
       if(!tableBody) return;
@@ -3194,7 +3203,6 @@
         updatedAt: serverTimestamp()
       });
     }
-
     window.addSummaryRow = async function(){
       await addDoc(collection(db,"summary-items"), {
         description:"", quantity:0, unit:"",
@@ -3221,20 +3229,6 @@
     a.onload=c;
     document.body.appendChild(a);
 })();
-</script>
-
-<!-- LOGOUT BUTTON SCRIPT -->
-<script type="module">
-  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-
-  const auth = getAuth();
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    signOut(auth).then(() => {
-      window.location.href = "index.html"; // Redirect to welcome page
-    }).catch((error) => {
-      console.error("Logout error:", error);
-    });
-  });
 </script>
 </body>
 </html>
