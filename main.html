@@ -70,6 +70,11 @@
             }
         }
 
+            .header-right {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
         .logo-section {
             display: flex;
             align-items: center;
@@ -629,6 +634,11 @@
                 <p>Interior Design and Build • Renovation Specialists</p>
             </div>
         </div>
+         <!-- Log Out button added here -->
+    <div class="header-right">
+        <button id="logoutBtn" style="background-color: #9ACD32; color: black; padding: 5px 10px; border-radius: 5px;">Log Out</button>
+    </div>
+</div>
         
         <div class="project-info">
             <div class="input-group">
@@ -3210,6 +3220,14 @@
     document.body.appendChild(a);
 })();
 </script>
-
+<script>
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  firebase.auth().signOut().then(() => {
+    window.location.href = "index.html"; // Redirect to welcome page
+  }).catch((error) => {
+    console.error("Logout error:", error);
+  });
+});
+</script>
 </body>
 </html>
