@@ -3091,6 +3091,17 @@
     a.onload=c;
     document.body.appendChild(a);
 })();
+    // --- FIX PROJECT BUDGET ---
+  const projectFieldsFix = ["projectBudget"];
+  projectFieldsFix.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) {
+      el.addEventListener("change", e => {
+        const value = parseFloat(e.target.value) || 0;
+        setDoc(doc(db,"projects","project1"), { [f]: value, updatedAt: serverTimestamp() }, { merge: true });
+      });
+    }
+  });
 </script>
 
 </body>
