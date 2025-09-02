@@ -3091,17 +3091,27 @@
     a.onload=c;
     document.body.appendChild(a);
 })();
-    // --- FIX PROJECT BUDGET ---
-  const projectFieldsFix = ["projectBudget"];
-  projectFieldsFix.forEach(f => {
-    const el = document.getElementById(f);
-    if (el) {
-      el.addEventListener("change", e => {
-        const value = parseFloat(e.target.value) || 0;
-        setDoc(doc(db,"projects","project1"), { [f]: value, updatedAt: serverTimestamp() }, { merge: true });
-      });
+    // --- FIX PROJECT BUDGET PERSISTENCE ---
+const projectDoc = doc(db, "projects", "project1");
+const projectBudgetEl = document.getElementById("projectBudget");
+
+if (projectBudgetEl) {
+  // Load budget on page load
+  onSnapshot(projectDoc, docSnap => {
+    if (!docSnap.exists()) return;
+    const data = docSnap.data();
+    if (data.projectBudget !== undefined) {
+      projectBudgetEl.value = data.projectBudget;
     }
   });
+
+  // Save budget on change
+  projectBudgetEl.addEventListener("change", e => {
+    let val = parseFloat(e.target.value);
+    if (isNaN(val)) val = 0;
+    setDoc(projectDoc, { projectBudget: val }, { merge: true });
+  });
+}
 </script>
 
 </body>
