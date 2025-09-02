@@ -1998,6 +1998,21 @@
                 const budgetValue = project.projectInfo.projectBudget || '';
                 const budgetInput = document.getElementById('projectBudget');
                 budgetInput.value = budgetValue;
+
+                // Save budget changes to Firestore and localStorage
+budgetInput.addEventListener('input', e => {
+    const value = e.target.value;
+
+    // Save to Firestore
+    setDoc(projectDoc, { projectBudget: value, updatedAt: serverTimestamp() }, { merge: true });
+
+    // Save to localStorage for persistence
+    const savedProjects = JSON.parse(localStorage.getItem('articentro_all_projects') || '{}');
+    if(savedProjects[currentProjectId]) {
+        savedProjects[currentProjectId].projectInfo.projectBudget = value;
+        localStorage.setItem('articentro_all_projects', JSON.stringify(savedProjects));
+    }
+});
                 
                 document.getElementById('projectType').value = project.projectInfo.projectType || '';
                 
